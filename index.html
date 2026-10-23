@@ -127,8 +127,29 @@ tbody tr:hover td{background:var(--card2)}
 .tab.on{background:var(--card);color:var(--text);box-shadow:var(--shadow)}
 
 /* SEARCH */
-.search-bar{display:flex;gap:8px;margin-bottom:14px}
-.search-bar input{flex:1;padding:8px 12px;border:1px solid var(--border-str);border-radius:var(--radius);background:var(--input);color:var(--text);font-size:13px;font-family:inherit}
+.search-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.search-bar input{flex:1 1 220px}
+/* VIEW SWITCH (Cards / Table / List) + sort */
+.vseg{display:inline-flex;border:1px solid var(--border-str);border-radius:var(--radius);overflow:hidden;background:var(--card)}
+.vseg button{border:none;background:none;padding:7px 11px;font-size:12px;font-family:inherit;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.vseg button+button{border-left:1px solid var(--border-str)}
+.vseg button.on{background:var(--navy);color:#fff}
+.vsort{padding:7px 9px;border:1px solid var(--border-str);border-radius:var(--radius);background:var(--input);color:var(--text);font-size:12px;font-family:inherit}
+.vtbl tbody tr{cursor:pointer}
+.vtbl td{white-space:nowrap}
+/* compact list view */
+.clist{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:18px}
+.clist-row{display:flex;align-items:center;gap:12px;padding:9px 14px;border-bottom:1px solid var(--border);cursor:pointer}
+.clist-row:last-child{border-bottom:none}
+.clist-row:hover{background:var(--card2)}
+.clist-main{flex:1;min-width:0}
+.clist-name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.clist-sub{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.clist-acts{display:flex;gap:10px;flex-shrink:0}
+.clist .av{width:30px;height:30px;font-size:11px}
+@media (max-width:640px){.clist-acts{display:none}}
+@media (max-width:900px){.vseg .vlbl{display:none}.vseg button{padding:7px 12px;font-size:14px}}
+.search-bar input{padding:8px 12px;border:1px solid var(--border-str);border-radius:var(--radius);background:var(--input);color:var(--text);font-size:13px;font-family:inherit}
 
 /* CONTACT CARDS */
 .contact-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:12px;margin-bottom:18px}
@@ -1301,18 +1322,78 @@ function onSearch(key,val){
   const box=document.getElementById('search-results');
   if(box) box.innerHTML=key==='products'?productResults():contactResults(key);
 }
+/* ── VIEW SWITCH: Cards / Table / List, plus sort — remembered per page in this browser ── */
+let VIEW=(()=>{ try{ return JSON.parse(localStorage.getItem('mp_view')||'{}')||{}; }catch(e){ return {}; } })();
+const viewOf=k=>VIEW[k]||'cards', sortOf=k=>VIEW[k+'Sort']||'name';
+function setView(k,key,val){
+  VIEW[key]=val;
+  try{ localStorage.setItem('mp_view',JSON.stringify(VIEW)); }catch(e){}
+  const box=document.getElementById('search-results');
+  if(box) box.innerHTML=k==='products'?productResults():contactResults(k);
+  document.querySelectorAll('.vseg button').forEach(b=>b.classList.toggle('on',b.dataset.v===viewOf(k)));
+}
+function viewBar(k){
+  const sorts=[['name','Name A–Z'],['name-desc','Name Z–A'],['newest','Newest first'],['status','Active first'],
+    ...(k==='products'?[['price','Price low–high'],['price-desc','Price high–low'],['category','Category']]:[['country','Country']])];
+  return `<div class="vseg" role="group" aria-label="View">
+      ${[['cards','▦','Cards'],['table','▤','Table'],['list','☰','List']].map(([v,i,l])=>
+        `<button type="button" data-v="${v}" class="${viewOf(k)===v?'on':''}" title="${l} view" aria-label="${l} view" onclick="setView('${k}','${k}','${v}')">${i}<span class="vlbl"> ${l}</span></button>`).join('')}
+    </div>
+    <select class="vsort" title="Sort" onchange="setView('${k}','${k}Sort',this.value)">
+      ${sorts.map(([v,l])=>`<option value="${v}" ${sortOf(k)===v?'selected':''}>${l}</option>`).join('')}
+    </select>`;
+}
+function sortList(list,k){
+  const by=sortOf(k), txt=(x,f)=>String(x[f]||'').toLowerCase();
+  const num=id=>parseInt(String(id||'').replace(/\D/g,''),10)||0;
+  const cmp={
+    name:(a,b)=>txt(a,'name').localeCompare(txt(b,'name')),
+    'name-desc':(a,b)=>txt(b,'name').localeCompare(txt(a,'name')),
+    newest:(a,b)=>num(b.id)-num(a.id),
+    status:(a,b)=>((a.status==='inactive')-(b.status==='inactive'))||txt(a,'name').localeCompare(txt(b,'name')),
+    country:(a,b)=>txt(a,'country').localeCompare(txt(b,'country'))||txt(a,'name').localeCompare(txt(b,'name')),
+    category:(a,b)=>txt(a,'category').localeCompare(txt(b,'category'))||txt(a,'name').localeCompare(txt(b,'name')),
+    price:(a,b)=>toBase(a.unitPrice||0,a.currency)-toBase(b.unitPrice||0,b.currency),
+    'price-desc':(a,b)=>toBase(b.unitPrice||0,b.currency)-toBase(a.unitPrice||0,a.currency),
+  }[by]||(()=>0);
+  return [...list].sort(cmp);
+}
+
 function renderContacts(type){
   return `
-  <div class="search-bar"><input id="search-box" placeholder="Search by name, contact, email or phone…" value="${escAttr(SEARCH[type])}" oninput="onSearch('${type}',this.value)" autocomplete="off"/></div>
+  <div class="search-bar"><input id="search-box" placeholder="Search by name, contact, email or phone…" value="${escAttr(SEARCH[type])}" oninput="onSearch('${type}',this.value)" autocomplete="off"/>${viewBar(type)}</div>
   <div id="search-results">${contactResults(type)}</div>`;
 }
 function contactResults(type){
-  const isC=type==='clients';
+  const isC=type==='clients', kind=isC?'client':'supplier';
   const list=isC?DB.clients:DB.suppliers;
   const q=SEARCH[type].trim().toLowerCase();
-  const fl=list.filter(x=>matches(q,x.name,x.contact,x.email,x.tel,x.id,isC?x.industry:x.category));
-  return `
-  ${fl.length===0?`<div class="empty">No ${type} found${q?` for "${escAttr(SEARCH[type])}"`:''}.</div>`:''}
+  const fl=sortList(list.filter(x=>matches(q,x.name,x.contact,x.email,x.tel,x.id,isC?x.industry:x.category)),type);
+  const e=escAttr;
+  const acts=x=>(isC?`<button class="alink" onclick="event.stopPropagation();fromClient('${x.id}')">New QT</button>
+      <button class="alink" onclick="event.stopPropagation();openSOAFromClient('${x.id}')">SOA</button>`
+    :`<button class="alink" onclick="event.stopPropagation();fromSupplier('${x.id}')">New PO</button>`)
+    +`<button class="alink" onclick="event.stopPropagation();openModal('${kind}','${x.id}')">Edit</button>`;
+  if(fl.length===0) return `<div class="empty">No ${type} found${q?` for "${e(SEARCH[type])}"`:''}.</div>`;
+  const count=`<div class="field-hint" style="margin-bottom:8px">${fl.length} ${fl.length===1?kind:type}${q?' found':''}</div>`;
+  if(viewOf(type)==='table') return count+`<div class="tbl-wrap" style="overflow-x:auto"><table class="vtbl">
+    <thead><tr><th>Name</th>${isC?'<th>Industry</th>':'<th>Category</th>'}<th>Contact</th><th>Email</th><th>Tel</th><th>Country</th>${isC?'':'<th>Currency</th>'}<th>Terms</th><th>Status</th><th></th></tr></thead>
+    <tbody>${fl.map(x=>`<tr onclick="openModal('${kind}','${x.id}')">
+      <td style="font-weight:600">${e(x.name)}</td><td>${e(isC?x.industry:x.category)||'—'}</td>
+      <td>${e(x.contact)||'—'}</td><td>${e(x.email)||'—'}</td><td>${e(x.tel)||'—'}</td><td>${e(x.country)||'—'}</td>
+      ${isC?'':`<td>${e(x.currency)||'—'}</td>`}<td>${e(x.terms)||'—'}</td>
+      <td><span class="badge b-${x.status}">${x.status||'—'}</span></td>
+      <td><div style="display:flex;gap:10px">${acts(x)}</div></td>
+    </tr>`).join('')}</tbody></table></div>`;
+  if(viewOf(type)==='list') return count+`<div class="clist">${fl.map(x=>`
+    <div class="clist-row" onclick="openModal('${kind}','${x.id}')">
+      <div class="av ${isC?'av-c':'av-s'}">${inits(x.name||'?')}</div>
+      <div class="clist-main"><div class="clist-name">${e(x.name)}</div>
+        <div class="clist-sub">${[x.contact,x.email,x.tel,x.country].filter(Boolean).map(e).join(' · ')||'—'}</div></div>
+      <span class="badge b-${x.status}">${x.status||''}</span>
+      <div class="clist-acts">${acts(x)}</div>
+    </div>`).join('')}</div>`;
+  return count+`
   <div class="contact-grid">${fl.map(x=>`
     <div class="contact-card" onclick="openModal('${isC?'client':'supplier'}','${x.id}')">
       <div class="cc-hdr">
@@ -1345,44 +1426,56 @@ function renderProducts(){
       <option value="">All categories</option>
       ${cats.map(c=>`<option value="${escAttr(c)}" ${SEARCH.products===c?'selected':''}>${c}</option>`).join('')}
     </select>
+    ${viewBar('products')}
   </div>
   <div id="search-results">${productResults()}</div>`;
 }
 function productResults(){
   const q=SEARCH.products.trim().toLowerCase();
-  const fl=DB.products.filter(p=>matches(q,p.name,p.code,p.category,p.notes));
-  return `
-  ${fl.length===0?`<div class="empty">No products found.</div>`:''}
+  const fl=sortList(DB.products.filter(p=>matches(q,p.name,p.code,p.category,p.notes)),'products');
+  const e=escAttr;
+  if(fl.length===0) return `<div class="empty">No products found.</div>`;
+  const count=`<div class="field-hint" style="margin-bottom:8px">${fl.length} product${fl.length===1?'':'s'}${q?' found':''}</div>`;
+  const acts=p=>`<button class="alink" onclick="event.stopPropagation();openModal('product','${p.id}')">Edit</button>
+    <button class="alink" onclick="event.stopPropagation();delProduct('${p.id}')">Delete</button>`;
+  if(viewOf('products')==='table') return count+`<div class="tbl-wrap" style="overflow-x:auto">
+    <table class="vtbl"><thead><tr><th>Code</th><th>Product name</th><th>Category</th><th>Unit</th><th style="text-align:right">Unit price</th><th>Supplier</th><th>Status</th><th></th></tr></thead>
+    <tbody>${fl.map(p=>`<tr onclick="openModal('product','${p.id}')">
+      <td class="mono">${e(p.code)}</td>
+      <td style="font-weight:500">${e(p.name)}</td>
+      <td>${e(p.category)||'—'}</td>
+      <td>${e(p.unit)||'—'}</td>
+      <td style="font-weight:600;text-align:right">${fmt(p.unitPrice,p.currency)}</td>
+      <td style="color:var(--muted);font-size:12px">${p.supplierId?e(sName(p.supplierId)):'—'}</td>
+      <td><span class="badge b-${p.status}">${p.status||'—'}</span></td>
+      <td><div style="display:flex;gap:10px">${acts(p)}</div></td>
+    </tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+  if(viewOf('products')==='list') return count+`<div class="clist">${fl.map(p=>`
+    <div class="clist-row" onclick="openModal('product','${p.id}')">
+      <span class="prod-code" style="margin:0;flex-shrink:0">${e(p.code)}</span>
+      <div class="clist-main"><div class="clist-name">${e(p.name)}</div>
+        <div class="clist-sub">${[p.category,p.unit,p.supplierId?sName(p.supplierId):''].filter(Boolean).map(e).join(' · ')||'—'}</div></div>
+      <span style="font-weight:700;font-size:13px;white-space:nowrap">${fmt(p.unitPrice,p.currency)}</span>
+      <span class="badge b-${p.status}">${p.status||''}</span>
+      <div class="clist-acts">${acts(p)}</div>
+    </div>`).join('')}</div>`;
+  return count+`
   <div class="prod-grid">${fl.map(p=>`
     <div class="prod-card" onclick="openModal('product','${p.id}')">
       <div class="prod-code">${p.code}</div>
       <div class="prod-name">${p.name}</div>
-      <div class="prod-cat">${p.category} · ${p.unit}</div>
+      <div class="prod-cat">${p.category||'—'} · ${p.unit||''}</div>
       <div class="prod-price">${fmt(p.unitPrice, p.currency)}</div>
       ${p.supplierId?`<div style="font-size:11px;color:var(--muted);margin-top:4px">Supplier: ${sName(p.supplierId)}</div>`:''}
       ${p.notes?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${p.notes}</div>`:''}
       <div class="prod-foot">
         <span class="badge b-${p.status}">${p.status}</span>
         <button class="btn btn-sm btn-purple" onclick="event.stopPropagation();openModal('product','${p.id}')" style="margin-left:auto">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();delProduct('${p.id}')">Delete</button>
       </div>
     </div>`).join('')}
-  </div>
-  <div class="tbl-wrap">
-    <table><thead><tr><th>Code</th><th>Product name</th><th>Category</th><th>Unit</th><th>Unit price</th><th>Supplier</th><th>Status</th><th></th></tr></thead>
-    <tbody>${fl.map(p=>`<tr>
-      <td class="mono">${p.code}</td>
-      <td style="font-weight:500">${p.name}</td>
-      <td>${p.category}</td>
-      <td>${p.unit}</td>
-      <td style="font-weight:600">${fmt(p.unitPrice,p.currency)}</td>
-      <td style="color:var(--muted);font-size:12px">${p.supplierId?sName(p.supplierId):'—'}</td>
-      <td><span class="badge b-${p.status}">${p.status}</span></td>
-      <td style="white-space:nowrap">
-        <button class="alink" onclick="openModal('product','${p.id}')">Edit</button> &nbsp;
-        <button class="alink" onclick="delProduct('${p.id}')">Delete</button>
-      </td>
-    </tr>`).join('')}</tbody>
-    </table>
   </div>`;
 }
 

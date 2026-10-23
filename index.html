@@ -459,7 +459,12 @@ function persistLocal(){ try{ localStorage.setItem('mp_db',JSON.stringify(DB)); 
 function persistSynced(){ try{ localStorage.setItem('mp_synced',JSON.stringify(SYNCED)); }catch(e){ console.warn('persistSynced:',e); } }
 function normalizeDB(){ COLLS.forEach(c=>{ if(!Array.isArray(DB[c])) DB[c]=[]; }); }
 // Re-render only when it can't wipe what the user is typing (doc form, modal, settings inputs)
-function safeRender(){ pills(); if(!DOC_TYPE && !MODAL && PAGE!=='settings') render(); }
+function safeRender(){
+  pills();
+  // Never redraw under someone typing (e.g. in a search box when another user's save arrives)
+  const a=document.activeElement, typing=a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.closest('#content');
+  if(!DOC_TYPE && !MODAL && PAGE!=='settings' && !typing) render();
+}
 
 // Records that differ from what was last synced → upserts; synced ids no longer in DB → deletes
 function diffDB(){
@@ -1287,24 +1292,37 @@ function renderFollowUps(){
 /* ═══════════════════════════════════════════════
    CONTACTS
 ═══════════════════════════════════════════════ */
+const escAttr=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+// Does any of these fields contain the search text?
+const matches=(q,...fields)=>!q||fields.some(f=>String(f||'').toLowerCase().includes(q));
+// Search boxes redraw only their results, so the box keeps focus while you type
+function onSearch(key,val){
+  SEARCH[key]=val;
+  const box=document.getElementById('search-results');
+  if(box) box.innerHTML=key==='products'?productResults():contactResults(key);
+}
 function renderContacts(type){
+  return `
+  <div class="search-bar"><input id="search-box" placeholder="Search by name, contact, email or phone…" value="${escAttr(SEARCH[type])}" oninput="onSearch('${type}',this.value)" autocomplete="off"/></div>
+  <div id="search-results">${contactResults(type)}</div>`;
+}
+function contactResults(type){
   const isC=type==='clients';
   const list=isC?DB.clients:DB.suppliers;
-  const q=SEARCH[type].toLowerCase();
-  const fl=q?list.filter(x=>x.name.toLowerCase().includes(q)||(x.contact||'').toLowerCase().includes(q)):list;
+  const q=SEARCH[type].trim().toLowerCase();
+  const fl=list.filter(x=>matches(q,x.name,x.contact,x.email,x.tel,x.id,isC?x.industry:x.category));
   return `
-  <div class="search-bar"><input placeholder="Search by name or contact…" value="${SEARCH[type]}" oninput="SEARCH['${type}']=this.value;render()"/></div>
-  ${fl.length===0?`<div class="empty">No ${type} found.</div>`:''}
+  ${fl.length===0?`<div class="empty">No ${type} found${q?` for "${escAttr(SEARCH[type])}"`:''}.</div>`:''}
   <div class="contact-grid">${fl.map(x=>`
     <div class="contact-card" onclick="openModal('${isC?'client':'supplier'}','${x.id}')">
       <div class="cc-hdr">
         <div class="av ${isC?'av-c':'av-s'}">${inits(x.name)}</div>
-        <div style="flex:1;min-width:0"><div class="cc-name">${x.name}</div><div class="cc-role">${isC?x.industry:x.category}</div></div>
+        <div style="flex:1;min-width:0"><div class="cc-name">${x.name}</div><div class="cc-role">${(isC?x.industry:x.category)||''}</div></div>
         <span class="badge b-${x.status}">${x.status}</span>
       </div>
       <div class="cc-det">${x.contact||'—'}</div>
       <div class="cc-det">${x.email||'—'}</div>
-      <div class="cc-det">${x.tel||'—'} · ${x.country}</div>
+      <div class="cc-det">${x.tel||'—'}${x.country?' · '+x.country:''}</div>
       <div class="cc-foot">
         ${isC?`<button class="btn btn-sm" onclick="event.stopPropagation();fromClient('${x.id}')">New QT</button>
                <button class="btn btn-sm" onclick="event.stopPropagation();openSOAFromClient('${x.id}')">SOA</button>`
@@ -1319,17 +1337,21 @@ function renderContacts(type){
    PRODUCTS
 ═══════════════════════════════════════════════ */
 function renderProducts(){
-  const q=SEARCH.products.toLowerCase();
-  const cats=[...new Set(DB.products.map(p=>p.category))];
-  const fl=q?DB.products.filter(p=>p.name.toLowerCase().includes(q)||p.code.toLowerCase().includes(q)||(p.category||'').toLowerCase().includes(q)):DB.products;
+  const cats=[...new Set(DB.products.map(p=>p.category).filter(Boolean))];
   return `
   <div class="search-bar">
-    <input placeholder="Search by name, code, or category…" value="${SEARCH.products}" oninput="SEARCH.products=this.value;render()"/>
+    <input id="search-box" placeholder="Search by name, code, or category…" value="${escAttr(SEARCH.products)}" oninput="onSearch('products',this.value)" autocomplete="off"/>
     <select onchange="SEARCH.products=this.value;render()" style="padding:8px 10px;border:1px solid var(--border-str);border-radius:var(--radius);background:var(--input);color:var(--text);font-size:13px">
       <option value="">All categories</option>
-      ${cats.map(c=>`<option value="${c}" ${SEARCH.products===c?'selected':''}>${c}</option>`).join('')}
+      ${cats.map(c=>`<option value="${escAttr(c)}" ${SEARCH.products===c?'selected':''}>${c}</option>`).join('')}
     </select>
   </div>
+  <div id="search-results">${productResults()}</div>`;
+}
+function productResults(){
+  const q=SEARCH.products.trim().toLowerCase();
+  const fl=DB.products.filter(p=>matches(q,p.name,p.code,p.category,p.notes));
+  return `
   ${fl.length===0?`<div class="empty">No products found.</div>`:''}
   <div class="prod-grid">${fl.map(p=>`
     <div class="prod-card" onclick="openModal('product','${p.id}')">
@@ -2059,9 +2081,7 @@ function renderDocForm(){
   <div class="panel"><h4>${isPO?'Supplier':'Client'} Details</h4>
     <div class="frow c2">
       <div class="fgrp"><label>${isPO?'Select supplier':'Select client'}</label>
-        <select id="f-party" onchange="onParty(this.value)">
-          <option value="">— Select —</option>${isC?cOpts:sOpts}
-        </select>
+        ${partyPicker(isC?'client':'supplier',isC?FORM.clientId:FORM.supplierId,onParty)}
       </div>
       <div class="fgrp"><label>Attention to</label><input id="f-attn" value="${FORM.attn||''}" oninput="FORM.attn=this.value"/></div>
     </div>
@@ -2253,6 +2273,39 @@ function renderDocForm(){
     <button class="btn btn-navy" onclick="saveDoc()">Save document</button>
   </div>`}`;
 }
+
+/* ── TYPE-TO-SEARCH CLIENT / SUPPLIER PICKER ──
+   Type any part of a name (or contact / email) and the list narrows as you type.
+   onPick(id) runs once one client or supplier is chosen; '' when the box is cleared. */
+const PARTY_PICK={};
+function partyPicker(kind,selectedId,onPick){
+  const list=kind==='client'?DB.clients:DB.suppliers;
+  const sel=list.find(x=>x.id===selectedId);
+  PARTY_PICK[kind]=onPick;
+  return `<input id="f-party" list="party-${kind}" value="${escAttr(sel?sel.name:'')}" placeholder="Type to search ${kind}s…" autocomplete="off"
+      onfocus="this.select()" onchange="pickParty('${kind}',this)"
+      oninput="if(event.inputType==='insertReplacementText'||!event.inputType)pickParty('${kind}',this)"/>
+    <datalist id="party-${kind}">${list.filter(x=>x.status!=='inactive'||x.id===selectedId)
+      .map(x=>`<option value="${escAttr(x.name)}">${escAttr([x.contact,x.email].filter(Boolean).join(' · '))}</option>`).join('')}</datalist>`;
+}
+function pickParty(kind,el){
+  const list=kind==='client'?DB.clients:DB.suppliers, pick=PARTY_PICK[kind];
+  const q=el.value.trim().toLowerCase();
+  if(!pick) return;
+  if(!q){ pick(''); return; }
+  const exact=list.filter(x=>(x.name||'').trim().toLowerCase()===q);
+  const hits=exact.length?exact:list.filter(x=>matches(q,x.name,x.contact,x.email));
+  if(hits.length===1){ el.value=hits[0].name; pick(hits[0].id); return; }
+  toast(hits.length?`${hits.length} ${kind}s match "${el.value.trim()}" — pick one from the list`
+    :`No ${kind} called "${el.value.trim()}" — add it under ${kind==='client'?'Clients':'Suppliers'} first`,false);
+}
+// Supplier picked on a purchase invoice / goods received note
+function onSupInvParty(id){
+  const sp=DB.suppliers.find(x=>x.id===id)||{};
+  FORM.supplierId=id; FORM.terms=sp.terms||'30 days'; FORM.due=dueFromTerms(FORM.terms,FORM.date);
+  FORM.currency=sp.currency||CO.currency; FORM.attn=sp.contact||''; render();
+}
+function onSupDOParty(id){ const sp=DB.suppliers.find(x=>x.id===id)||{}; FORM.supplierId=id; FORM.attn=sp.contact||''; render(); }
 
 function onParty(val){
   const isPO=DOC_TYPE==='po';
@@ -3288,9 +3341,7 @@ function renderSupInvoiceForm(){
   <div class="panel"><h4>Supplier details</h4>
     <div class="frow c2">
       <div class="fgrp"><label>Supplier *</label>
-        <select id="f-party" onchange="FORM.supplierId=this.value;const sp=DB.suppliers.find(x=>x.id===this.value)||{};FORM.terms=sp.terms||'30 days';FORM.due=dueFromTerms(FORM.terms,FORM.date);FORM.currency=sp.currency||CO.currency;FORM.attn=sp.contact||'';render()">
-          <option value="">— Select supplier —</option>${sOpts}
-        </select>
+        ${partyPicker('supplier',FORM.supplierId,onSupInvParty)}
       </div>
       <div class="fgrp"><label>Attention to</label><input id="f-attn" value="${FORM.attn||''}" oninput="FORM.attn=this.value"/></div>
     </div>
@@ -3473,9 +3524,7 @@ function renderSupDOForm(){
   <div class="panel"><h4>Supplier details</h4>
     <div class="frow c2">
       <div class="fgrp"><label>Supplier *</label>
-        <select id="f-party" onchange="FORM.supplierId=this.value;const sp=DB.suppliers.find(x=>x.id===this.value)||{};FORM.attn=sp.contact||'';render()">
-          <option value="">— Select supplier —</option>${sOpts}
-        </select>
+        ${partyPicker('supplier',FORM.supplierId,onSupDOParty)}
       </div>
       <div class="fgrp"><label>Attention to / Delivered by</label><input id="f-attn" value="${FORM.attn||''}" oninput="FORM.attn=this.value"/></div>
     </div>
@@ -3555,10 +3604,7 @@ function renderCreditDebitForm(){
         </select>
       </div>
       <div class="fgrp"><label>${isC?'Client':'Supplier'} *</label>
-        <select onchange="${isC?'FORM.clientId':'FORM.supplierId'}=this.value;render()">
-          <option value="">— Select —</option>
-          ${isC?cOpts:sOpts}
-        </select>
+        ${partyPicker(isC?'client':'supplier',isC?FORM.clientId:FORM.supplierId,id=>{ FORM[isC?'clientId':'supplierId']=id; render(); })}
       </div>
     </div>
     <div class="frow c3">
@@ -4506,6 +4552,7 @@ function renderReportModal(){
 }
 
 function rptSetCat(cat){
+  window._rptCat=cat;  // preview, print, PDF and CSV all read this
   // Style tabs
   ['docs','clients','suppliers','products'].forEach(v=>{
     const btn=document.getElementById('rcat-'+v);
@@ -4575,58 +4622,15 @@ function previewReport(){
   const el    = document.getElementById('rpt-summary');
   if(!el) return;
 
-  // ── DATABASE REPORTS (no date filter needed) ──
-  if(cat==='clients'){
-    const rows = DB.clients;
-    if(chips) chips.innerHTML=`<span style="background:var(--accent-bg);color:var(--accent-tx);padding:2px 10px;border-radius:20px;font-size:12px">Total clients: <strong>${rows.length}</strong></span>`;
-    el.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px">
-      <thead><tr style="background:var(--card2)">
-        ${['Name','Contact','Tel','Email','Address'].map(h=>`<th style="padding:5px 8px;border-bottom:1px solid var(--border);text-align:left">${h}</th>`).join('')}
-      </tr></thead>
-      <tbody>${rows.map(c=>`<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:5px 8px;font-weight:600">${c.name||'—'}</td>
-        <td style="padding:5px 8px">${c.contact||'—'}</td>
-        <td style="padding:5px 8px">${c.tel||'—'}</td>
-        <td style="padding:5px 8px">${c.email||'—'}</td>
-        <td style="padding:5px 8px;color:var(--muted)">${c.addr||'—'}</td>
-      </tr>`).join('')}</tbody>
-    </table>`; return;
-  }
-  if(cat==='suppliers'){
-    const rows = DB.suppliers;
-    if(chips) chips.innerHTML=`<span style="background:var(--accent-bg);color:var(--accent-tx);padding:2px 10px;border-radius:20px;font-size:12px">Total suppliers: <strong>${rows.length}</strong></span>`;
-    el.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px">
-      <thead><tr style="background:var(--card2)">
-        ${['Name','Contact','Tel','Email','Address'].map(h=>`<th style="padding:5px 8px;border-bottom:1px solid var(--border);text-align:left">${h}</th>`).join('')}
-      </tr></thead>
-      <tbody>${rows.map(s=>`<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:5px 8px;font-weight:600">${s.name||'—'}</td>
-        <td style="padding:5px 8px">${s.contact||'—'}</td>
-        <td style="padding:5px 8px">${s.tel||'—'}</td>
-        <td style="padding:5px 8px">${s.email||'—'}</td>
-        <td style="padding:5px 8px;color:var(--muted)">${s.addr||'—'}</td>
-      </tr>`).join('')}</tbody>
-    </table>`; return;
-  }
-  if(cat==='products'){
-    const rows = DB.products;
-    const active = rows.filter(p=>p.status==='active').length;
-    if(chips) chips.innerHTML=`<span style="background:var(--accent-bg);color:var(--accent-tx);padding:2px 10px;border-radius:20px;font-size:12px">Total: <strong>${rows.length}</strong></span>
-      <span style="background:var(--success-bg);color:var(--success-tx);padding:2px 10px;border-radius:20px;font-size:12px">Active: <strong>${active}</strong></span>`;
-    el.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px">
-      <thead><tr style="background:var(--card2)">
-        ${['Code','Name','Category','Unit','Unit Price','Supplier','Status'].map(h=>`<th style="padding:5px 8px;border-bottom:1px solid var(--border);text-align:left">${h}</th>`).join('')}
-      </tr></thead>
-      <tbody>${rows.map(p=>`<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:5px 8px;font-family:monospace">${p.code||'—'}</td>
-        <td style="padding:5px 8px;font-weight:600">${p.name||'—'}</td>
-        <td style="padding:5px 8px">${p.category||'—'}</td>
-        <td style="padding:5px 8px">${p.unit||'—'}</td>
-        <td style="padding:5px 8px;text-align:right">${p.unitPrice?fmt(p.unitPrice,p.currency):'—'}</td>
-        <td style="padding:5px 8px">${sName(p.supplierId)||'—'}</td>
-        <td style="padding:5px 8px"><span class="badge b-${p.status||''}">${p.status||'—'}</span></td>
-      </tr>`).join('')}</tbody>
-    </table>`; return;
+  // ── DATABASE REPORTS (no date filter needed) — same columns as the CSV / PDF ──
+  if(cat!=='docs'){
+    const r=masterReport(cat);
+    if(chips) chips.innerHTML=r.chips.map(([t,n])=>`<span style="background:var(--accent-bg);color:var(--accent-tx);padding:2px 10px;border-radius:20px;font-size:12px">${t}: <strong>${n}</strong></span>`).join('');
+    if(!r.rows.length){ el.innerHTML=`<div style="text-align:center;padding:16px;color:var(--muted)">No ${cat} yet.</div>`; return; }
+    el.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap">
+      <thead><tr style="background:var(--card2)">${r.headers.map(h=>`<th style="padding:5px 8px;border-bottom:1px solid var(--border);text-align:left">${h}</th>`).join('')}</tr></thead>
+      <tbody>${r.rows.map(row=>`<tr style="border-bottom:1px solid var(--border)">${row.map((v,i)=>`<td style="padding:5px 8px;${i===1?'font-weight:600':''}">${escAttr(v)||'—'}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table></div>`; return;
   }
 
   // ── DOCUMENTS ──
@@ -4665,25 +4669,42 @@ function previewReport(){
     </tr></tbody></table>`;
 }
 
+// One quoted CSV cell. Text Excel would run as a formula is neutralised: "=…"/"@…" get a leading ',
+// and "+…"/"-…" that isn't a plain number (e.g. phone "+65 8838 6949") gets a leading space so it stays text.
+function csvCell(v){
+  let s=String(v??'');
+  if(/^[=@]/.test(s)) s="'"+s;
+  else if(/^[+\-]/.test(s)&&!/^-?\d+(\.\d+)?$/.test(s)) s=' '+s;
+  return `"${s.replace(/"/g,'""')}"`;
+}
+
+// Clients / suppliers / products as one table: headers, rows and summary chips.
+// Preview, Print/PDF and CSV all use this, so they always show the same thing.
+function masterReport(cat){
+  const status=list=>[['Active',list.filter(x=>(x.status||'active')==='active').length],['Inactive',list.filter(x=>x.status==='inactive').length]];
+  if(cat==='clients') return {title:'Client List', label:'Clients',
+    headers:['ID','Name','Contact','Tel','Email','Address','Country','Industry','GST Reg No.','Payment Terms','Status','Notes'],
+    rows:DB.clients.map(c=>[c.id,c.name,c.contact,c.tel,c.email,c.addr,c.country,c.industry,c.gst,c.terms,c.status,c.notes].map(v=>v??'')),
+    chips:[['Total clients',DB.clients.length],...status(DB.clients)]};
+  if(cat==='suppliers') return {title:'Supplier List', label:'Suppliers',
+    headers:['ID','Name','Contact','Tel','Email','Address','Country','Category','Currency','Payment Terms','Status','Notes'],
+    rows:DB.suppliers.map(s=>[s.id,s.name,s.contact,s.tel,s.email,s.addr,s.country,s.category,s.currency,s.terms,s.status,s.notes].map(v=>v??'')),
+    chips:[['Total suppliers',DB.suppliers.length],...status(DB.suppliers)]};
+  return {title:'Product List', label:'Products',
+    headers:['Code','Name','Category','Unit','Unit Price','Currency','Supplier','Status','Notes'],
+    rows:DB.products.map(p=>[p.code,p.name,p.category,p.unit,p.unitPrice!=null&&p.unitPrice!==''?Number(p.unitPrice).toFixed(2):'',p.currency||CO.currency,p.supplierId?sName(p.supplierId):'',p.status,p.notes].map(v=>v??'')),
+    chips:[['Total products',DB.products.length],...status(DB.products)]};
+}
+
 function printReport(mode='print'){
   const cat=window._rptCat||'docs';
   let title='', headers=[], rows=[], chips='', period='';
 
-  if(cat==='clients'){
-    title='Client List'; period='All';
-    headers=['Name','Contact','Tel','Email','Address','Terms'];
-    rows=DB.clients.map(c=>[c.name||'',c.contact||'',c.tel||'',c.email||'',c.addr||'',c.terms||'']);
-    chips=`<span class="chip">Total clients: ${DB.clients.length}</span>`;
-  } else if(cat==='suppliers'){
-    title='Supplier List'; period='All';
-    headers=['Name','Contact','Tel','Email','Address','Terms'];
-    rows=DB.suppliers.map(s=>[s.name||'',s.contact||'',s.tel||'',s.email||'',s.addr||'',s.terms||'']);
-    chips=`<span class="chip">Total suppliers: ${DB.suppliers.length}</span>`;
-  } else if(cat==='products'){
-    title='Product List'; period='All';
-    headers=['Code','Name','Category','Unit','Unit Price','Supplier','Status'];
-    rows=DB.products.map(p=>[p.code||'',p.name||'',p.category||'',p.unit||'',p.unitPrice?(p.currency||CO.currency)+' '+p.unitPrice:'',sName(p.supplierId)||'',p.status||'']);
-    chips=`<span class="chip">Total: ${DB.products.length}</span><span class="chip">Active: ${DB.products.filter(p=>p.status==='active').length}</span>`;
+  if(cat!=='docs'){
+    const r=masterReport(cat);
+    title=r.title; period='All'; headers=r.headers;
+    rows=r.rows.map(row=>row.map(v=>escAttr(v).replace(/\n/g,'<br>')));
+    chips=r.chips.map(([t,n])=>`<span class="chip">${t}: ${n}</span>`).join('');
   } else {
     const docs=getReportDocs();
     const totalAmt=docs.reduce((s,d)=>s+(d.amount||0),0);
@@ -4736,15 +4757,9 @@ function downloadCSV(){
   const cat=window._rptCat||'docs';
   let headers=[], rows=[], label='';
 
-  if(cat==='clients'){
-    label='Clients'; headers=['Name','Contact','Tel','Email','Address','Terms','Notes'];
-    rows=DB.clients.map(c=>[c.name||'',c.contact||'',c.tel||'',c.email||'',c.addr||'',c.terms||'',c.notes||'']);
-  } else if(cat==='suppliers'){
-    label='Suppliers'; headers=['Name','Contact','Tel','Email','Address','Terms','Notes'];
-    rows=DB.suppliers.map(s=>[s.name||'',s.contact||'',s.tel||'',s.email||'',s.addr||'',s.terms||'',s.notes||'']);
-  } else if(cat==='products'){
-    label='Products'; headers=['Code','Name','Category','Unit','Unit Price','Currency','Supplier','Status'];
-    rows=DB.products.map(p=>[p.code||'',p.name||'',p.category||'',p.unit||'',p.unitPrice||'',p.currency||CO.currency,sName(p.supplierId)||'',p.status||'']);
+  if(cat!=='docs'){
+    const r=masterReport(cat);
+    label=`${r.label}_${today()}`; headers=r.headers; rows=r.rows;
   } else {
     const docs=getReportDocs();
     label=getRptPeriodLabel();
@@ -4753,7 +4768,7 @@ function downloadCSV(){
     rows=docs.map(d=>[d._type,d.id,d.date||'',d._party||'',d.ref||d.supplierRef||'',d.currency||CO.currency,(d.amount||0).toFixed(2),toBase(d.amount||0,d.currency).toFixed(2),d.status||'',(d.notes||'').replace(/"/g,"'")]);
   }
 
-  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const csv=[headers,...rows].map(r=>r.map(csvCell).join(',')).join('\r\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
   const a=Object.assign(document.createElement('a'),{href:url,download:`${CO.shortName||'Macpro'}_${label}.csv`});
@@ -5413,7 +5428,7 @@ function downloadClientCSV(){
   const base=CO.fxRates?.base||'SGD';
   const headers=['Document Type','Document No.','Date','Reference','Currency','Amount',base+' Equivalent','Status','Notes'];
   const rows=docs.map(d=>[d._type,d.id,d.date||'',d.ref||'',d.currency||CO.currency,(d.amount||0).toFixed(2),toBase(d.amount||0,d.currency).toFixed(2),d.status||'',(d.notes||'').replace(/"/g,"'")]);
-  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const csv=[headers,...rows].map(r=>r.map(csvCell).join(',')).join('\r\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
   const a=Object.assign(document.createElement('a'),{href:url,download:`ClientReport_${label}.csv`});

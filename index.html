@@ -176,10 +176,13 @@ tbody tr:hover td{background:var(--card2)}
 .prod-foot{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 
 /* LINE ITEMS */
-.line-tbl{width:100%;border-collapse:collapse;border:1px solid var(--border-str);border-radius:8px;overflow:hidden}
+.line-tbl{width:100%;border-collapse:collapse;border:1px solid var(--border-str);border-radius:8px;overflow:hidden;table-layout:fixed}
 .line-tbl th{font-size:11px;font-weight:700;color:#fff;background:var(--navy);text-transform:uppercase;letter-spacing:.5px;padding:9px 10px;text-align:left;border-right:1px solid rgba(255,255,255,.12)}
 .line-tbl th:last-child{border-right:none}
-.line-tbl td{padding:5px 4px;border-bottom:1px solid var(--border);vertical-align:middle}
+.line-tbl td{padding:5px 4px;border-bottom:1px solid var(--border);vertical-align:top}
+/* multi-line description: Enter starts a new line, the box grows with the text, long words wrap */
+.line-tbl textarea.line-desc{display:block;width:100%;min-height:32px;padding:6px 8px;font-size:12px;line-height:1.45;border:1px solid var(--border-str);border-radius:6px;background:var(--input);color:var(--text);font-family:inherit;resize:vertical;overflow:hidden;overflow-wrap:anywhere;field-sizing:content}
+.line-tbl td:nth-child(6){overflow-wrap:anywhere;padding-top:11px}
 .line-tbl tbody tr:last-child td{border-bottom:none}
 .line-tbl tbody tr:nth-child(even){background:var(--card2)}
 .line-tbl tbody tr:hover{background:var(--accent-bg)}
@@ -218,7 +221,7 @@ tbody tr:hover td{background:var(--card2)}
 .prev-hdr{display:flex;justify-content:space-between;margin-bottom:18px;padding-bottom:14px}
 .prev-tbl{width:100%;border-collapse:collapse;margin:12px 0;font-size:12px}
 .prev-tbl th{padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:#fff;letter-spacing:.3px}
-.prev-tbl td{padding:8px 10px;border-bottom:1px solid #d0d5dd;color:#1a1a1a;font-size:12px;line-height:1.55}
+.prev-tbl td{padding:8px 10px;border-bottom:1px solid #d0d5dd;color:#1a1a1a;font-size:12px;line-height:1.55;vertical-align:top}
 .prev-tbl tbody tr:nth-child(even) td{background:#f5f7fa}
 .prev-tbl tbody tr:hover td{background:#eef2ff}
 .prev-tbl tbody tr:last-child td{border-bottom:none}
@@ -1314,6 +1317,8 @@ function renderFollowUps(){
    CONTACTS
 ═══════════════════════════════════════════════ */
 const escAttr=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+// A multi-line description squeezed onto one line, for item summaries in lists
+const oneLine=s=>String(s??'').replace(/\s*\n+\s*/g,' ').trim();
 // Does any of these fields contain the search text?
 const matches=(q,...fields)=>!q||fields.some(f=>String(f||'').toLowerCase().includes(q));
 // Search boxes redraw only their results, so the box keeps focus while you type
@@ -1921,7 +1926,7 @@ function fromPOtoSupDO(poId){
   const po=DB.pos.find(x=>x.id===poId); if(!po) return;
   DOC_TYPE='sup-do'; EDIT_ID='new'; DOC_TAB='edit';
   const sp=DB.suppliers.find(x=>x.id===po.supplierId)||{};
-  const items=po.lines&&po.lines.length?po.lines.map(l=>l.desc).join(', '):'Goods as per '+poId;
+  const items=po.lines&&po.lines.length?po.lines.map(l=>oneLine(l.desc)).join(', '):'Goods as per '+poId;
   FORM={supplierId:po.supplierId,date:today(),receivedDate:today(),ref:poId,sinvRef:'',
     items,notes:'',attn:po.attn||sp.contact||'',receivedBy:'',status:'received'};
   nav('sup-do'); setTimeout(()=>{DOC_TYPE='sup-do';EDIT_ID='new';render();},10);
@@ -1930,7 +1935,7 @@ function fromSupInvtoDO(sinvId){
   const si=DB.supInvoices.find(x=>x.id===sinvId); if(!si) return;
   DOC_TYPE='sup-do'; EDIT_ID='new'; DOC_TAB='edit';
   const sp=DB.suppliers.find(x=>x.id===si.supplierId)||{};
-  const items=si.lines&&si.lines.length?si.lines.map(l=>l.desc).join(', '):'Goods as per '+si.ref;
+  const items=si.lines&&si.lines.length?si.lines.map(l=>oneLine(l.desc)).join(', '):'Goods as per '+si.ref;
   FORM={supplierId:si.supplierId,date:today(),receivedDate:today(),ref:si.ref||'',sinvRef:sinvId,
     items,notes:'',attn:si.attn||sp.contact||'',receivedBy:'',status:'received'};
   nav('sup-do'); setTimeout(()=>{DOC_TYPE='sup-do';EDIT_ID='new';render();},10);
@@ -2414,13 +2419,16 @@ function onParty(val){
   render();
 }
 
+// Size a description box to its text (for browsers without CSS field-sizing)
+function growDesc(el){ el.style.height='auto'; el.style.height=(el.scrollHeight+2)+'px'; }
 function renderLines(){
+  setTimeout(()=>document.querySelectorAll('textarea.line-desc').forEach(growDesc),0);
   const activeProds=DB.products.filter(p=>p.status==='active');
   return LINE_ITEMS.map((l,i)=>`<tr>
     <td style="text-align:center;color:var(--muted);font-size:12px;font-weight:600">${i+1}</td>
     <td>
       <div class="prod-picker">
-        <input value="${l.desc}" oninput="LINE_ITEMS[${i}].desc=this.value" placeholder="Description or pick product ↓" style="width:100%"/>
+        <textarea class="line-desc" rows="1" oninput="LINE_ITEMS[${i}].desc=this.value;growDesc(this)" placeholder="Description — press Enter for a new line, or pick a product ↓">${escAttr(l.desc)}</textarea>
         <div class="prod-dropdown ${PROD_PICKER_IDX===i?'open':''}">
           ${activeProds.map(p=>`<div class="prod-dd-item" onclick="selectProduct(${i},'${p.id}')">
             <span class="prod-dd-code">${p.code}</span>${p.name}
@@ -2680,7 +2688,7 @@ async function saveDocInner(){
     if(isNew&&FORM.srcQtId) rec.srcQtId=FORM.srcQtId;
     if(isNew&&FORM.srcSoId) rec.srcSoId=FORM.srcSoId;}
   if(DOC_TYPE==='po')       {rec.status=existingRec?existingRec.status:'pending';}
-  if(DOC_TYPE==='do')       {rec.status='issued';rec.items=LINE_ITEMS.map(l=>l.desc).join(', ');}
+  if(DOC_TYPE==='do')       {rec.status='issued';rec.items=LINE_ITEMS.map(l=>oneLine(l.desc)).join(', ');}
   if(DOC_TYPE==='do' && isNew && FORM.srcType && FORM.srcId){
     const srcMap={quotation:DB.quotations,'client-po':DB.clientPOs,invoice:DB.invoices};
     const arr=srcMap[FORM.srcType];
@@ -2690,7 +2698,7 @@ async function saveDocInner(){
   if(DOC_TYPE==='client-po'){
     const soSel=document.getElementById('f-so-status');
     rec.status=soSel?soSel.value:(FORM.soStatus||'outstanding');
-    rec.items=LINE_ITEMS.map(l=>l.desc).filter(Boolean).join(', ')||rec.items||'';
+    rec.items=LINE_ITEMS.map(l=>oneLine(l.desc)).filter(Boolean).join(', ')||rec.items||'';
     if(isNew && FORM.srcQtId) rec.srcQtId=FORM.srcQtId;
   }
   keepMeta(rec,existingRec);
@@ -2780,7 +2788,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
           <tbody>
             ${LINE_ITEMS.map((l,i)=>`<tr>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${i+1}</td>
-              <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;color:#1a1a1a;color:#1a1a1a">${l.desc||'—'}</td>
+              <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word;vertical-align:top;color:#1a1a1a">${escAttr(l.desc)||'—'}</td>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.qty}</td>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
@@ -2901,7 +2909,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
           <tbody>
             ${LINE_ITEMS.map((l,i)=>`<tr>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${i+1}</td>
-              <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;color:#1a1a1a">${l.desc||'—'}</td>
+              <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word;vertical-align:top;color:#1a1a1a">${escAttr(l.desc)||'—'}</td>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.qty}</td>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
@@ -3017,7 +3025,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
           <tbody>
             ${LINE_ITEMS.map((l,i)=>`<tr>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${i+1}</td>
-              <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;color:#1a1a1a;color:#1a1a1a">${l.desc||'—'}</td>
+              <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word;vertical-align:top;color:#1a1a1a">${escAttr(l.desc)||'—'}</td>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.qty}</td>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
@@ -3141,7 +3149,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
           <tbody>
             ${LINE_ITEMS.map((l,i)=>`<tr>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${i+1}</td>
-              <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;color:#1a1a1a;color:#1a1a1a">${l.desc||'—'}</td>
+              <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word;vertical-align:top;color:#1a1a1a">${escAttr(l.desc)||'—'}</td>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.qty.toFixed(2)}</td>
             </tr>`).join('')}
             <tr>
@@ -3234,7 +3242,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
           <tbody>
             ${LINE_ITEMS.map((l,i)=>`<tr>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${i+1}</td>
-              <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;color:#1a1a1a">${l.desc||'—'}</td>
+              <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word;vertical-align:top;color:#1a1a1a">${escAttr(l.desc)||'—'}</td>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.qty}</td>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
@@ -3337,7 +3345,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
     </div>
     <table class="prev-tbl">
       <thead><tr style="background:${CO.brand}"><th>#</th><th>Description</th><th>Qty</th><th>Unit</th><th class="r">Unit price</th><th class="r">Amount (${cur})</th></tr></thead>
-      <tbody>${LINE_ITEMS.map((l,i)=>`<tr><td>${i+1}</td><td>${l.desc||'—'}</td><td>${l.qty}</td><td>${l.unit}</td><td class="r">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td><td class="r">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td></tr>`).join('')}</tbody>
+      <tbody>${LINE_ITEMS.map((l,i)=>`<tr><td style="vertical-align:top">${i+1}</td><td style="white-space:pre-line;overflow-wrap:anywhere;word-break:break-word">${escAttr(l.desc)||'—'}</td><td>${l.qty}</td><td>${l.unit}</td><td class="r">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td><td class="r">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td></tr>`).join('')}</tbody>
     </table>
     <div style="display:flex;justify-content:flex-end">
       <table style="width:230px;font-size:12px">
@@ -3583,7 +3591,7 @@ function renderSupInvoicePreview(cur,sub,gst,tot,party){
     </div>
     <table class="prev-tbl">
       <thead><tr style="background:${CO.brand}"><th>#</th><th>Description</th><th>Qty</th><th>Unit</th><th class="r">Unit price</th><th class="r">Amount (${cur})</th></tr></thead>
-      <tbody>${LINE_ITEMS.map((l,i)=>`<tr><td>${i+1}</td><td>${l.desc||'—'}</td><td>${l.qty}</td><td>${l.unit}</td><td class="r">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td><td class="r">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td></tr>`).join('')}</tbody>
+      <tbody>${LINE_ITEMS.map((l,i)=>`<tr><td style="vertical-align:top">${i+1}</td><td style="white-space:pre-line;overflow-wrap:anywhere;word-break:break-word">${escAttr(l.desc)||'—'}</td><td>${l.qty}</td><td>${l.unit}</td><td class="r">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td><td class="r">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td></tr>`).join('')}</tbody>
     </table>
     <div style="display:flex;justify-content:flex-end">
       <table style="width:230px;font-size:12px">
@@ -3641,7 +3649,7 @@ function renderSupDOForm(){
     <div class="frow c2">
       <div class="fgrp"><label>Our PO reference</label><select id="f-ref" onchange="FORM.ref=this.value">${poOpts}</select></div>
       <div class="fgrp"><label>Linked purchase invoice</label>
-        <select id="f-sinvref" onchange="FORM.sinvRef=this.value;const si=DB.supInvoices.find(x=>x.id===this.value);if(si){FORM.supplierId=si.supplierId;FORM.attn=si.attn||FORM.attn;FORM.ref=si.ref||FORM.ref;FORM.items=si.lines&&si.lines.length?si.lines.map(l=>l.desc+(l.qty?' x'+l.qty:'')).join(', '):FORM.items;}render()">${siOpts}</select>
+        <select id="f-sinvref" onchange="FORM.sinvRef=this.value;const si=DB.supInvoices.find(x=>x.id===this.value);if(si){FORM.supplierId=si.supplierId;FORM.attn=si.attn||FORM.attn;FORM.ref=si.ref||FORM.ref;FORM.items=si.lines&&si.lines.length?si.lines.map(l=>oneLine(l.desc)+(l.qty?' x'+l.qty:'')).join(', '):FORM.items;}render()">${siOpts}</select>
       </div>
     </div>
     <div class="frow c2">
@@ -3800,7 +3808,7 @@ function renderCreditDebitPreview(isCN,cur,sub,gst,tot,party){
         <tbody>
           ${LINE_ITEMS.map((l,i)=>`<tr>
             <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${i+1}</td>
-            <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;color:#1a1a1a">${l.desc||'—'}</td>
+            <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word;vertical-align:top;color:#1a1a1a">${escAttr(l.desc)||'—'}</td>
             <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
             <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.qty}</td>
             <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td>

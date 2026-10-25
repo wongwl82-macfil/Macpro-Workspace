@@ -1387,7 +1387,7 @@ function contactResults(type){
       <td style="font-weight:600">${e(x.name)}</td><td>${e(isC?x.industry:x.category)||'—'}</td>
       <td>${e(x.contact)||'—'}</td><td>${e(x.email)||'—'}</td><td>${e(x.tel)||'—'}</td><td>${e(x.country)||'—'}</td>
       ${isC?'':`<td>${e(x.currency)||'—'}</td>`}<td>${e(x.terms)||'—'}</td>
-      <td><span class="badge b-${x.status}">${x.status||'—'}</span></td>
+      <td><div style="display:flex;gap:4px"><span class="badge b-${x.status}">${x.status||'—'}</span>${alsoTag(kind,x)}</div></td>
       <td><div style="display:flex;gap:10px">${acts(x)}</div></td>
     </tr>`).join('')}</tbody></table></div>`;
   if(viewOf(type)==='list') return count+`<div class="clist">${fl.map(x=>`
@@ -1395,7 +1395,7 @@ function contactResults(type){
       <div class="av ${isC?'av-c':'av-s'}">${inits(x.name||'?')}</div>
       <div class="clist-main"><div class="clist-name">${e(x.name)}</div>
         <div class="clist-sub">${[x.contact,x.email,x.tel,x.country].filter(Boolean).map(e).join(' · ')||'—'}</div></div>
-      <span class="badge b-${x.status}">${x.status||''}</span>
+      ${alsoTag(kind,x)}<span class="badge b-${x.status}">${x.status||''}</span>
       <div class="clist-acts">${acts(x)}</div>
     </div>`).join('')}</div>`;
   return count+`
@@ -1404,7 +1404,7 @@ function contactResults(type){
       <div class="cc-hdr">
         <div class="av ${isC?'av-c':'av-s'}">${inits(x.name)}</div>
         <div style="flex:1;min-width:0"><div class="cc-name">${x.name}</div><div class="cc-role">${(isC?x.industry:x.category)||''}</div></div>
-        <span class="badge b-${x.status}">${x.status}</span>
+        <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end"><span class="badge b-${x.status}">${x.status}</span>${alsoTag(kind,x)}</div>
       </div>
       <div class="cc-det">${x.contact||'—'}</div>
       <div class="cc-det">${x.email||'—'}</div>
@@ -1521,7 +1521,7 @@ function renderModal(){
     </div>
     <div class="frow c2">
       <div class="fgrp"><label>${isC?'GST Reg No.':'Currency'}</label>
-        ${isC?`<input id="m-gst" value="${v('gst')}"/>`:`<select id="m-cur"><option ${v('currency')==='MYR'?'selected':''}>MYR</option><option ${v('currency')==='SGD'?'selected':''}>SGD</option><option ${v('currency')==='USD'?'selected':''}>USD</option></select>`}
+        ${isC?`<input id="m-gst" value="${v('gst')}"/>`:`<select id="m-cur">${[...new Set(['MYR','SGD','USD','EUR','GBP','AUD','JPY','CNY',v('currency','MYR')])].map(c=>`<option ${v('currency','MYR')===c?'selected':''}>${c}</option>`).join('')}</select>`}
       </div>
       <div class="fgrp"><label>Payment terms</label>
         <select id="m-terms">${termsOptions(v('terms'))}</select>
@@ -1531,8 +1531,10 @@ function renderModal(){
       <select id="m-status"><option ${v('status','active')==='active'?'selected':''}>active</option><option ${v('status')==='inactive'?'selected':''}>inactive</option></select>
     </div></div>
     <div class="frow"><div class="fgrp"><label>Notes</label><textarea id="m-notes">${v('notes')}</textarea></div></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
-      ${!isNew?`<button class="btn btn-danger btn-sm" onclick="delContact('${type}','${id}')">Delete</button>`:''}
+    ${!isNew&&linkedParty(type,rec)?`<div class="field-hint" style="margin-bottom:8px">⇄ Also a ${isC?'supplier':'client'}: <button class="alink" onclick="openModal('${isC?'supplier':'client'}','${linkedParty(type,rec).id}')">${escAttr(linkedParty(type,rec).name)} (${linkedParty(type,rec).id})</button></div>`:''}
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px;flex-wrap:wrap">
+      ${!isNew?`<button class="btn btn-danger btn-sm" onclick="delContact('${type}','${id}')">Delete</button>
+      <button class="btn btn-sm" style="margin-right:auto" onclick="openConvertDialog('${type}','${id}')">⇄ Convert to ${isC?'supplier':'client'}</button>`:''}
       <button class="btn btn-sm" onclick="MODAL=null;render()">Cancel</button>
       <button class="btn btn-navy btn-sm" onclick="saveContact('${type}','${id}')">Save</button>
     </div>
@@ -1635,6 +1637,7 @@ async function saveContactInner(type,id){
   };
   if(isC){ rec.industry=document.getElementById('m-ind').value; rec.gst=document.getElementById('m-gst').value; }
   else   { rec.category=document.getElementById('m-cat').value; rec.currency=document.getElementById('m-cur').value; }
+  if(!isNew) keepMeta(rec,list.find(x=>x.id===id));  // keep fields the form doesn't show (e.g. the client⇄supplier link)
   if(isNew) list.push(rec);
   else { const i=list.findIndex(x=>x.id===id); if(i>=0) list[i]=rec; }
   saveDB(); pills(); MODAL=null; toast(isNew?'Record added':'Record updated'); render();
@@ -1645,6 +1648,79 @@ function delContact(type,id){
   if(type==='client') DB.clients=DB.clients.filter(x=>x.id!==id);
   else DB.suppliers=DB.suppliers.filter(x=>x.id!==id);
   saveDB(); pills(); MODAL=null; toast('Deleted'); render();
+}
+
+/* ── CONVERT CLIENT ⇄ SUPPLIER ──
+   Copy: keep the original and add the company to the other list, the two records linked.
+   Move: take it out of this list — only allowed when no documents use it, so none lose their client/supplier. */
+const otherKind=k=>k==='client'?'supplier':'client';
+// The linked record in the other list, if it still exists
+function linkedParty(kind,rec){
+  if(!rec) return null;
+  const lid=kind==='client'?rec.linkedSupplierId:rec.linkedClientId;
+  return lid?(kind==='client'?DB.suppliers:DB.clients).find(x=>x.id===lid)||null:null;
+}
+// How many documents (and, for suppliers, products) point at this client / supplier
+function partyUsage(kind,id){
+  const key=kind==='client'?'clientId':'supplierId';
+  const colls=kind==='client'?['quotations','clientPOs','invoices','dos','creditNotes','debitNotes']:['pos','supInvoices','supDOs','creditNotes','debitNotes','products'];
+  return colls.reduce((n,c)=>n+(DB[c]||[]).filter(d=>d[key]===id).length,0);
+}
+function openConvertDialog(kind,id){
+  const src=(kind==='client'?DB.clients:DB.suppliers).find(x=>x.id===id); if(!src) return;
+  const to=otherKind(kind), used=partyUsage(kind,id), e=escAttr;
+  const linked=linkedParty(kind,src);
+  const same=(to==='client'?DB.clients:DB.suppliers).find(x=>x.id!==(linked&&linked.id)&&(x.name||'').trim().toLowerCase()===(src.name||'').trim().toLowerCase());
+  const opt=(mode,title,desc,disabled)=>`<button class="btn" ${disabled?'disabled':''} onclick="convertParty('${kind}','${id}','${mode}')"
+      style="display:block;width:100%;text-align:left;white-space:normal;padding:12px 14px;margin-bottom:8px;line-height:1.4;${disabled?'opacity:.5;cursor:not-allowed':''}">
+      <strong>${title}</strong><br><span class="field-hint">${desc}</span></button>`;
+  const ov=document.createElement('div'); ov.id='convert-dialog';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(11,31,75,.45);display:flex;align-items:center;justify-content:center;z-index:9000;padding:16px';
+  ov.innerHTML=`<div class="panel" style="width:480px;max-width:100%;margin:0">
+    <h4>⇄ ${e(src.name)} as a ${to}</h4>
+    ${linked?`<p style="font-size:13px;margin-bottom:12px">Already a ${to}: <strong>${e(linked.name)}</strong> (${linked.id}).</p>
+      <button class="btn btn-navy" style="width:100%;margin-bottom:8px" onclick="closeConvertDialog();openModal('${to}','${linked.id}')">Open ${to} ${linked.id}</button>`
+    :`${same?`<p class="field-hint" style="margin-bottom:10px">⚠ A ${to} with this name already exists: <strong>${e(same.name)}</strong> (${same.id}).</p>
+        ${opt('link',`Link to existing ${to} ${same.id}`,`No new record — just mark the two as the same company.`)}`:''}
+      ${opt('copy',`Copy — also add as a ${to}`,`Keeps ${e(src.name)} as a ${kind} and creates a ${to} with the same details. Best when you buy from and sell to the same company.`)}
+      ${opt('move',`Move — change to a ${to}`,used
+        ?`Not possible: ${used} ${kind==='supplier'?'document(s)/product(s)':'document(s)'} use this ${kind}. Use Copy instead.`
+        :`Removes ${e(src.name)} from ${kind}s and adds it as a ${to}.`,used>0)}`}
+    <div style="text-align:right;margin-top:4px"><button class="btn btn-sm" onclick="closeConvertDialog()">Cancel</button></div>
+  </div>`;
+  ov.addEventListener('click',ev=>{ if(ev.target===ov) closeConvertDialog(); });
+  document.body.appendChild(ov);
+}
+function closeConvertDialog(){ const d=document.getElementById('convert-dialog'); if(d) d.remove(); }
+function convertParty(kind,id,mode){ return withSaving(()=>convertPartyInner(kind,id,mode)); }
+async function convertPartyInner(kind,id,mode){
+  const fromKey=kind+'s', to=otherKind(kind), toKey=to+'s';
+  const src=DB[fromKey].find(x=>x.id===id); if(!src){ closeConvertDialog(); return; }
+  const srcLink=to==='supplier'?'linkedSupplierId':'linkedClientId', newLink=kind==='client'?'linkedClientId':'linkedSupplierId';
+  if(mode==='link'){
+    const same=DB[toKey].find(x=>(x.name||'').trim().toLowerCase()===(src.name||'').trim().toLowerCase());
+    if(!same) return;
+    src[srcLink]=same.id; same[newLink]=src.id;
+    saveDB(); closeConvertDialog(); toast(`Linked ${src.id} ⇄ ${same.id}`); render(); return;
+  }
+  if(mode==='move'&&partyUsage(kind,id)){ toast(`Can't move: documents use this ${kind} — use Copy`,false); return; }
+  const newId=await allocNo(to==='client'?'C':'S',toKey,null,'',3);
+  const src2=DB[fromKey].find(x=>x.id===id)||src;  // re-read after the await (a cloud reload may have replaced DB)
+  const rec={id:newId,name:src2.name,contact:src2.contact||'',email:src2.email||'',tel:src2.tel||'',addr:src2.addr||'',
+    country:src2.country||'',terms:src2.terms||'30 days',status:src2.status||'active',notes:src2.notes||'',gst:src2.gst||''};
+  if(to==='supplier'){ const last=lastClientDoc(id); rec.category=src2.industry||''; rec.currency=(last&&last.currency)||CO.currency; }
+  else rec.industry=src2.category||'';
+  if(mode==='copy'){ rec[newLink]=id; src2[srcLink]=newId; }
+  DB[toKey].push(rec);
+  if(mode==='move') DB[fromKey]=DB[fromKey].filter(x=>x.id!==id);
+  saveDB(); pills(); closeConvertDialog();
+  toast(mode==='move'?`${src2.name} is now ${to} ${newId}`:`${src2.name} added as ${to} ${newId} (still ${kind} ${id})`);
+  MODAL={type:to,id:newId}; render();  // open the new record so its details can be checked
+}
+// Small tag on cards / list rows for companies that are both
+function alsoTag(kind,x){
+  const l=linkedParty(kind,x);
+  return l?`<span class="badge" title="Also ${otherKind(kind)} ${l.id}" style="background:var(--purple-bg);color:var(--purple-tx)">⇄ ${otherKind(kind)}</span>`:'';
 }
 
 /* ═══════════════════════════════════════════════

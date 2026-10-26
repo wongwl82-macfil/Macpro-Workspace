@@ -779,9 +779,15 @@ async function doReset(){
   catch(e){authErr(e.message||'Failed to send reset email.');}
 }
 async function doLogout(){
-  const sb=getSB();if(sb)await sb.auth.signOut();
+  const sb=getSB();
+  // Push anything not yet in the cloud first, so clearing this browser can't lose work
+  if(sb&&AUTH_USER&&SYNCED&&!(await saveDB())
+     &&!confirm('Some changes have not reached the cloud yet (no connection?).\n\nSign out anyway? Those changes will be lost on this computer.')) return;
   if(sb&&_rt){sb.removeChannel(_rt);_rt=null;}
-  AUTH_USER=null;showLogin();
+  if(sb) await sb.auth.signOut();
+  // Shared PCs: remove the copy of the company's data kept in this browser
+  ['mp_db','mp_synced','mp_co','mp_conflicts'].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  location.reload();  // also clears everything held in memory; the login screen comes back
 }
 async function checkSession(){
   if(!isConfigured()){setSyncStatus('offline');loadFromCloud();return;}
@@ -932,7 +938,9 @@ function defaultDB() {
     debitNotes:[],
   };
 }
-let DB = JSON.parse(localStorage.getItem('mp_db')||'null') || defaultDB();
+// Start empty when this browser holds no copy (first visit, or after sign-out) — the real
+// data comes from the cloud after sign-in, and sample data must never be uploaded to it
+let DB = JSON.parse(localStorage.getItem('mp_db')||'null') || Object.fromEntries(COLLS.map(c=>[c,[]]));
 if(!DB.products)    { DB.products    = defaultDB().products;    }
 if(!DB.supInvoices) { DB.supInvoices = defaultDB().supInvoices; }
 if(!DB.supDOs)      { DB.supDOs      = defaultDB().supDOs;      }

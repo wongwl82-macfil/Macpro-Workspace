@@ -1793,7 +1793,7 @@ function renderDocList(){
     <tbody>${m.rows.map(d=>`<tr>${m.flds.map(f=>{
       if(f==='clientId')  return `<td>${cName(d[f])}</td>`;
       if(f==='supplierId')return `<td>${sName(d[f])}</td>`;
-      if(f==='status')    return `<td><span class="badge b-${d[f]}">${d[f]}</span></td>`;
+      if(f==='status')    return `<td><span class="badge b-${d[f]}">${LOCK_TYPES[PAGE]&&d[f]==='cancelled'?'voided':d[f]}</span></td>`;
       if(f==='amount')    return `<td>${fmt(d[f],d.currency)}</td>`;
       if(f==='id')        return `<td class="mono">${isLockedRec(PAGE,d)?'<span title="Issued — locked">🔒</span> ':''}${d[f]}</td>`;
       if(f==='_pay')      return `<td style="font-size:11px;color:var(--muted)">${d.status==='paid'?`<span style="color:var(--success-tx)">✓ ${d.paidDate||''}</span>${d.paidRef?' · '+d.paidRef:''}${d.paidMethod?' · '+d.paidMethod:''}` : '—'}</td>`;
@@ -1808,9 +1808,11 @@ function renderDocList(){
                  <button class="alink" onclick="fromQTtoDO('${d.id}')"      style="color:var(--purple-tx)">→ DO</button>` : ''}
       ${isInv ? `<button class="alink" onclick="fromINVtoDO('${d.id}')"     style="color:var(--purple-tx)">→ DO</button>
                  <button class="alink" onclick="openSOAFromClient('${d.clientId||''}')" style="color:var(--accent-tx)">SOA</button>
-                 ${d.status!=='paid'
+                 ${d.status==='paid'
+                   ? `<button class="alink" onclick="markInvoiceUnpaid('${d.id}')" style="color:var(--muted)">↩ Unpaid</button>`
+                   : isIssued(d)  // drafts and voided invoices can't take a payment
                    ? `<button class="alink" onclick="markInvoicePaid('${d.id}')" style="color:var(--success-tx);font-weight:600">✓ Mark paid</button>`
-                   : `<button class="alink" onclick="markInvoiceUnpaid('${d.id}')" style="color:var(--muted)">↩ Unpaid</button>`
+                   : ''
                  }` : ''}
     </td></tr>`).join('')}</tbody>
   </table></div>`;
@@ -4545,6 +4547,14 @@ function renderAutomationSettings(){
     <span><span style="font-weight:600;font-size:13px">${label}</span><br><span class="field-hint">${hint}</span></span></label>`;
   const p=AUTO_PREVIEW;
   return `
+  <div class="panel"><h4>Backups</h4>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-navy" onclick="downloadFullBackup()">🗄 Download full backup (JSON)</button>
+      <span class="field-hint">${lastBackupText()}</span>
+    </div>
+    <div class="field-hint" style="margin-top:8px">One file with every document, client, supplier and product, plus company settings and numbering.
+      Keep copies somewhere other than this computer (e.g. Google Drive / OneDrive). The nightly backup below also keeps 30 days in Supabase Storage once the daily job is set up.</div>
+  </div>
   <div class="panel"><h4>For your team</h4>
     <div class="frow"><div class="fgrp"><label>Send team emails to</label><input id="au-summaryTo" value="${a.summaryTo||''}" placeholder="${CO.email||'you@company.com'} (default: company email)"/></div></div>
     ${chk('dailySummary',a.dailySummary,'Morning summary (08:00)','Overdue and due-soon invoices, expiring and unanswered quotes, orders to deliver or invoice, POs awaiting goods.')}
@@ -4850,6 +4860,7 @@ function renderReportModal(){
       <button class="btn btn-navy" onclick="previewReport()">🔄 Refresh</button>
       <button class="btn" onclick="printReport('print')">🖨 Print</button><button class="btn btn-navy" onclick="printReport('pdf')">⬇ Download PDF</button>
       <button class="btn btn-gold" onclick="downloadCSV()">⬇ Download CSV</button>
+      <button class="btn" onclick="downloadFullBackup()" title="Everything — documents, clients, suppliers, products, settings — in one file">🗄 Full backup (JSON)</button>
     </div>
   </div></div>`;
   setTimeout(()=>{ window._rptCat='docs'; previewReport(); }, 60);
@@ -5056,6 +5067,47 @@ function printReport(mode='print'){
     setTimeout(()=>URL.revokeObjectURL(url),5000);
     toast('Opened in new tab — choose "Save as PDF" in the print dialog');
   }
+}
+
+/* ── FULL BACKUP (JSON) ──
+   One file with everything: every document, client, supplier and product, company settings
+   and the numbering counters. Taken from the cloud when signed in, so it is complete even if
+   this browser is behind; otherwise from this browser's copy (and says so in the file). */
+async function downloadFullBackup(){
+  toast('Preparing backup…');
+  let records=null, settings=CO, counters=null, source='this browser (not signed in or offline)';
+  const sb=getSB();
+  if(sb&&AUTH_USER){
+    try{
+      const [rows,coRes,ctrRes]=await Promise.all([fetchAllRecords(sb),
+        sb.from('mp_settings').select('value').eq('key','co').maybeSingle(), sb.from('mp_counters').select('prefix,n')]);
+      records={}; rows.forEach(r=>{ (records[r.coll]=records[r.coll]||[]).push(r.data); });
+      if(coRes.data&&coRes.data.value) settings=coRes.data.value;
+      if(!ctrRes.error) counters=ctrRes.data;
+      source='cloud';
+    }catch(e){ console.warn('backup: cloud read failed, using local copy',e); }
+  }
+  if(!records){ records={}; COLLS.forEach(c=>{ records[c]=DB[c]||[]; }); }
+  COLLS.forEach(c=>{ if(!records[c]) records[c]=[]; });
+  const counts=Object.fromEntries(Object.entries(records).map(([c,a])=>[c,a.length]));
+  const now=new Date(), p2=n=>String(n).padStart(2,'0');
+  const stamp=`${now.getFullYear()}${p2(now.getMonth()+1)}${p2(now.getDate())}_${p2(now.getHours())}${p2(now.getMinutes())}`;  // local time
+  const backup={app:'Macpro Document Hub',format:1,takenAt:now.toISOString(),takenBy:whoAmI(),source,
+    counts,records,settings,counters};
+  const blob=new Blob([JSON.stringify(backup,null,1)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=Object.assign(document.createElement('a'),{href:url,download:`${(CO.shortName||'Macpro').replace(/[^\w]+/g,'_').replace(/^_+|_+$/g,'')}_Backup_${stamp}.json`});
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),5000);
+  try{ localStorage.setItem('mp_lastBackup',now.toISOString()); }catch(e){}
+  const total=Object.values(counts).reduce((s,n)=>s+n,0);
+  toast(`Backup downloaded: ${total} records${source==='cloud'?'':' (from this browser only)'}`,source==='cloud');
+  if(PAGE==='settings'&&!MODAL) render();
+}
+function lastBackupText(){
+  let at=null; try{ at=localStorage.getItem('mp_lastBackup'); }catch(e){}
+  if(!at) return 'No backup downloaded on this computer yet.';
+  const days=Math.floor((Date.now()-new Date(at))/864e5);
+  return `Last downloaded on this computer: ${fmtWhen(at)}${days>=7?` — <strong style="color:var(--danger)">${days} days ago</strong>`:''}`;
 }
 
 function downloadCSV(){

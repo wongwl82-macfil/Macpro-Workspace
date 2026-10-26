@@ -104,7 +104,6 @@ function openEmailDialog(){
   EMAIL_JOB={rec, docType:DOC_TYPE, filename, pdf:docPdfBase64(area.innerHTML,filename)};
   EMAIL_JOB.pdf.catch(()=>{}); // reported when sending
   const sent=(rec.emailLog||[]).slice(-1)[0];
-  const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
   const ov=document.createElement('div'); ov.id='email-dialog';
   ov.style.cssText='position:fixed;inset:0;background:rgba(11,31,75,.45);display:flex;align-items:center;justify-content:center;z-index:9000;padding:16px';
   ov.innerHTML=`<div class="panel" style="width:560px;max-width:100%;max-height:92vh;overflow:auto;margin:0">
@@ -112,7 +111,7 @@ function openEmailDialog(){
     ${sent?`<div class="field-hint" style="margin-bottom:10px">Last sent ${esc(sent.at.slice(0,16).replace('T',' '))} to ${esc(sent.to)}</div>`:''}
     <div class="frow"><div class="fgrp"><label>To</label><input id="em-to" value="${esc(party.email)}" placeholder="name@company.com, other@company.com"/></div></div>
     <div class="frow"><div class="fgrp"><label>CC</label><input id="em-cc" value="${esc(CO.email)}"/></div></div>
-    <div class="frow"><div class="fgrp"><label>Subject</label><input id="em-subj" value="${esc(`${DOC_NAME[DOC_TYPE]||'Document'} ${rec.id} — ${CO.shortName||CO.name}`)}"/></div></div>
+    <div class="frow"><div class="fgrp"><label>Subject</label><input id="em-subj" value="${esc(`${esc(DOC_NAME[DOC_TYPE]||'Document')} ${esc(rec.id)} — ${esc(CO.shortName||CO.name)}`)}"/></div></div>
     <div class="frow"><div class="fgrp"><label>Message</label><textarea id="em-body" rows="10">${esc(emailTemplate(rec,party))}</textarea></div></div>
     <label style="display:flex;gap:8px;align-items:center;font-size:12px;margin-bottom:12px"><input type="checkbox" id="em-pdf" checked/> Attach ${esc(filename)}</label>
     <div id="em-status" class="field-hint" style="margin-bottom:10px"></div>

@@ -55,7 +55,7 @@ function renderReportModal(){
       <div id="rpt-monthly-row" class="frow c2" style="margin-bottom:10px">
         <div class="fgrp"><label>Month</label>
           <select id="rpt-month" onchange="previewReport()">
-            ${months.map(m=>`<option value="${m}" ${m===curYYYYMM?'selected':''}>${fmtMonthLabel(m)}</option>`).join('')}
+            ${months.map(m=>`<option value="${m}" ${m===curYYYYMM?'selected':''}>${esc(fmtMonthLabel(m))}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -188,7 +188,7 @@ function previewReport(){
   docs.forEach(d=>{ byType[d._type]=(byType[d._type]||0)+1; });
   if(chips) chips.innerHTML=Object.entries(byType).map(([t,c])=>
     `<span style="background:var(--accent-bg);color:var(--accent-tx);padding:2px 10px;border-radius:20px;font-size:12px">${t}: <strong>${c}</strong></span>`
-  ).join('')+`<span style="background:var(--card2);border:1px solid var(--border);padding:2px 10px;border-radius:20px;font-size:12px">Total: <strong>${fmt(totalAmt)}</strong></span>`;
+  ).join('')+`<span style="background:var(--card2);border:1px solid var(--border);padding:2px 10px;border-radius:20px;font-size:12px">Total: <strong>${esc(fmt(totalAmt))}</strong></span>`;
   if(!docs.length){ el.innerHTML='<div style="text-align:center;padding:16px;color:var(--muted)">No records found.</div>'; return; }
   el.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px">
     <thead><tr style="background:var(--card2)">
@@ -197,22 +197,22 @@ function previewReport(){
       <th style="padding:5px 8px;text-align:left;border-bottom:1px solid var(--border)">Date</th>
       <th style="padding:5px 8px;text-align:left;border-bottom:1px solid var(--border)">Party</th>
       <th style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border)">Amount</th>
-      <th style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border)">${CO.fxRates?.base||'SGD'} Equiv.</th>
+      <th style="padding:5px 8px;text-align:right;border-bottom:1px solid var(--border)">${esc(CO.fxRates?.base||'SGD')} Equiv.</th>
       <th style="padding:5px 8px;text-align:left;border-bottom:1px solid var(--border)">Status</th>
     </tr></thead>
     <tbody>${docs.map(d=>`<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:5px 8px;color:var(--muted)">${d._type}</td>
-      <td style="padding:5px 8px;font-family:monospace">${d.id}</td>
-      <td style="padding:5px 8px">${d.date||'—'}</td>
-      <td style="padding:5px 8px">${d._party||'—'}</td>
-      <td style="padding:5px 8px;text-align:right">${d.amount?fmt(d.amount,d.currency):'—'}</td>
-      <td style="padding:5px 8px;text-align:right;color:var(--accent-tx)">${d.amount?fmtBase(d.amount,d.currency):'—'}</td>
-      <td style="padding:5px 8px"><span class="badge b-${d.status||''}">${d.status||'—'}</span></td>
+      <td style="padding:5px 8px;color:var(--muted)">${esc(d._type)}</td>
+      <td style="padding:5px 8px;font-family:monospace">${esc(d.id)}</td>
+      <td style="padding:5px 8px">${esc(d.date||'—')}</td>
+      <td style="padding:5px 8px">${esc(d._party||'—')}</td>
+      <td style="padding:5px 8px;text-align:right">${esc(d.amount?fmt(d.amount,d.currency):'—')}</td>
+      <td style="padding:5px 8px;text-align:right;color:var(--accent-tx)">${esc(d.amount?fmtBase(d.amount,d.currency):'—')}</td>
+      <td style="padding:5px 8px"><span class="badge b-${esc(d.status||'')}">${esc(d.status||'—')}</span></td>
     </tr>`).join('')}
     <tr style="background:var(--card2);font-weight:700">
-      <td colspan="4" style="padding:6px 8px;text-align:right">Total (${CO.fxRates?.base||'SGD'} equivalent)</td>
+      <td colspan="4" style="padding:6px 8px;text-align:right">Total (${esc(CO.fxRates?.base||'SGD')} equivalent)</td>
       <td></td>
-      <td style="padding:6px 8px;text-align:right">${fmt(docs.reduce((s,d)=>s+toBase(d.amount||0,d.currency),0),CO.fxRates?.base||'SGD')}</td>
+      <td style="padding:6px 8px;text-align:right">${esc(fmt(docs.reduce((s,d)=>s+toBase(d.amount||0,d.currency),0),CO.fxRates?.base||'SGD'))}</td>
       <td></td>
     </tr></tbody></table>`;
 }
@@ -260,11 +260,11 @@ function printReport(mode='print'){
     docs.forEach(d=>{ byType[d._type]=(byType[d._type]||0)+1; });
     title='Document Report'; period=getRptPeriodLabel().replace(/_/g,' ');
     headers=['#','Type','Doc No.','Date','Party','Ref','Amount','Status'];
-    rows=docs.map((d,i)=>[i+1,d._type,d.id,d.date||'',d._party||'',d.ref||d.supplierRef||'',d.amount?(d.currency||CO.currency)+' '+d.amount.toLocaleString('en-SG',{minimumFractionDigits:2}):'—',d.status||'']);
-    chips=Object.entries(byType).map(([t,c])=>`<span class="chip">${t}: ${c}</span>`).join('')+`<span class="chip" style="background:#f0f4ff;color:#1e3a5f">Total: ${CO.currency} ${totalAmt.toLocaleString('en-SG',{minimumFractionDigits:2})}</span>`;
+    rows=docs.map((d,i)=>[i+1,d._type,d.id,d.date||'',d._party||'',d.ref||d.supplierRef||'',d.amount?(d.currency||CO.currency)+' '+d.amount.toLocaleString('en-SG',{minimumFractionDigits:2}):'—',d.status||''].map(v=>esc(v)));
+    chips=Object.entries(byType).map(([t,c])=>`<span class="chip">${t}: ${c}</span>`).join('')+`<span class="chip" style="background:#f0f4ff;color:#1e3a5f">Total: ${esc(CO.currency)} ${esc(totalAmt.toLocaleString('en-SG',{minimumFractionDigits:2}))}</span>`;
   }
 
-  const printHtml='<!DOCTYPE html><html><head><title>'+CO.name+' — '+title+'</title>'
+  const printHtml='<!DOCTYPE html><html><head><title>'+esc(CO.name)+' — '+title+'</title>'
     +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:20px}'
     +'h1{font-size:18px;color:#1e3a5f;margin-bottom:2px}.sub{font-size:12px;color:#666;margin-bottom:10px}'
     +'.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.chip{background:#e8f0fe;color:#1a56db;padding:3px 12px;border-radius:20px;font-size:11px}'
@@ -272,12 +272,12 @@ function printReport(mode='print'){
     +'td{padding:6px 8px;border-bottom:1px solid #eee}tr:nth-child(even){background:#f9f9f9}'
     +'.footer{margin-top:14px;font-size:10px;color:#aaa;border-top:1px solid #eee;padding-top:8px}'
     +'@media print{body{padding:8mm}@page{margin:8mm}}</style></head><body>'
-    +'<h1>'+CO.name+'</h1>'
-    +'<div class="sub">'+title+(period&&period!=='All'?' &nbsp;·&nbsp; Period: <strong>'+period+'</strong>':'')+' &nbsp;·&nbsp; Generated: '+today()+'</div>'
+    +'<h1>'+esc(CO.name)+'</h1>'
+    +'<div class="sub">'+title+(period&&period!=='All'?' &nbsp;·&nbsp; Period: <strong>'+period+'</strong>':'')+' &nbsp;·&nbsp; Generated: '+esc(today())+'</div>'
     +'<div class="chips">'+chips+'</div>'
     +'<table><thead><tr>'+headers.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead>'
     +'<tbody>'+rows.map(r=>'<tr>'+r.map(v=>'<td>'+v+'</td>').join('')+'</tr>').join('')+'</tbody></table>'
-    +'<div class="footer">'+CO.name+' · '+CO.email+' · '+CO.tel+' · Printed '+new Date().toLocaleString('en-SG')+'</div>'
+    +'<div class="footer">'+esc(CO.name)+' · '+esc(CO.email)+' · '+esc(CO.tel)+' · Printed '+esc(new Date().toLocaleString('en-SG'))+'</div>'
     +'</body></html>';
   const blob=new Blob([printHtml],{type:'text/html'});
   const url=URL.createObjectURL(blob);
@@ -419,19 +419,19 @@ function renderPaymentModal(){
         <div>
           <div style="font-size:10px;color:var(--accent-tx);text-transform:uppercase;letter-spacing:.5px;font-weight:700">Invoice</div>
           <div style="font-size:15px;font-weight:700;color:var(--navy);font-family:monospace">${invId}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px">${cl.name||'—'}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(cl.name||'—')}</div>
         </div>
         <div style="text-align:right">
           <div style="font-size:10px;color:var(--accent-tx);text-transform:uppercase;letter-spacing:.5px;font-weight:700">Amount due</div>
-          <div style="font-size:18px;font-weight:800;color:var(--navy)">${fmt(inv.amount, inv.currency)}</div>
-          <div style="font-size:11px;color:var(--muted)">Due: ${inv.due||'—'}</div>
+          <div style="font-size:18px;font-weight:800;color:var(--navy)">${esc(fmt(inv.amount, inv.currency))}</div>
+          <div style="font-size:11px;color:var(--muted)">Due: ${esc(inv.due||'—')}</div>
         </div>
       </div>
     </div>
 
     <div class="frow c2">
       <div class="fgrp"><label>Date payment received *</label>
-        <input type="date" id="pay-date" value="${today()}"/>
+        <input type="date" id="pay-date" value="${esc(today())}"/>
       </div>
       <div class="fgrp"><label>Payment method</label>
         <select id="pay-method">
@@ -448,8 +448,8 @@ function renderPaymentModal(){
       <input id="pay-ref" placeholder="e.g. TT ref, cheque no., transaction ID"/>
     </div>
     <div class="fgrp"><label>Amount received</label>
-      <input type="text" inputmode="decimal" id="pay-amount" value="${inv.amount}" style="text-align:right"
-        placeholder="${inv.amount}"/>
+      <input type="text" inputmode="decimal" id="pay-amount" value="${esc(inv.amount)}" style="text-align:right"
+        placeholder="${esc(inv.amount)}"/>
     </div>
     <div class="fgrp"><label>Notes (optional)</label>
       <input id="pay-note" placeholder="e.g. partial payment, bank charges deducted"/>
@@ -491,7 +491,7 @@ function renderSOAModal(){
   const curYYYYMM = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const firstDay  = curYYYYMM+'-01';
   const lastDay   = today();
-  const clientOpts = DB.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  const clientOpts = DB.clients.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
 
   const html=`<div class="overlay"><div class="modal" style="width:660px;max-height:92vh;overflow-y:auto">
     <div class="modal-hdr">
@@ -511,7 +511,7 @@ function renderSOAModal(){
           <option value="SGD">SGD only</option>
           <option value="USD">USD only</option>
           <option value="MYR">MYR only</option>
-          <option value="base">Converted to ${CO.fxRates?.base||'SGD'}</option>
+          <option value="base">Converted to ${esc(CO.fxRates?.base||'SGD')}</option>
         </select>
       </div>
     </div>
@@ -626,17 +626,17 @@ function previewSOA(){
   if(card){
     if(cl?.name){
       card.style.display='';
-      card.innerHTML=`<strong>${cl.name}</strong>${cl.tel?' &nbsp;·&nbsp; '+cl.tel:''}${cl.email?' &nbsp;·&nbsp; '+cl.email:''}${cl.contact?' &nbsp;·&nbsp; Attn: '+cl.contact:''}${cl.addr?'<br><span style="color:var(--muted)">'+cl.addr+'</span>':''}`;
+      card.innerHTML=`<strong>${esc(cl.name)}</strong>${cl.tel?' &nbsp;·&nbsp; '+esc(cl.tel):''}${cl.email?' &nbsp;·&nbsp; '+esc(cl.email):''}${cl.contact?' &nbsp;·&nbsp; Attn: '+esc(cl.contact):''}${cl.addr?'<br><span style="color:var(--muted);white-space:pre-line">'+esc(cl.addr)+'</span>':''}`;
     } else card.style.display='none';
   }
 
   if(!cl?.name){ if(el) el.innerHTML='<div style="text-align:center;padding:16px;color:var(--muted)">Select a client above.</div>'; return; }
 
   if(chips) chips.innerHTML=`
-    <span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:20px;font-size:12px">Invoiced: <strong>${dispCur!=='(multi)'?dispCur+' ':''} ${totalInvoiced.toLocaleString('en-SG',{minimumFractionDigits:2})}</strong></span>
-    <span style="background:#d1fae5;color:#065f46;padding:2px 10px;border-radius:20px;font-size:12px">Paid: <strong>${totalPaid.toLocaleString('en-SG',{minimumFractionDigits:2})}</strong></span>
-    <span style="background:${balance>0?'#fee2e2':'#d1fae5'};color:${balance>0?'#991b1b':'#065f46'};padding:2px 10px;border-radius:20px;font-size:12px">Balance: <strong>${balance.toLocaleString('en-SG',{minimumFractionDigits:2})}</strong></span>
-    <span style="background:var(--card2);border:1px solid var(--border);padding:2px 10px;border-radius:20px;font-size:12px">${rows.length} entries</span>`;
+    <span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:20px;font-size:12px">Invoiced: <strong>${dispCur!=='(multi)'?dispCur+' ':''} ${esc(totalInvoiced.toLocaleString('en-SG',{minimumFractionDigits:2}))}</strong></span>
+    <span style="background:#d1fae5;color:#065f46;padding:2px 10px;border-radius:20px;font-size:12px">Paid: <strong>${esc(totalPaid.toLocaleString('en-SG',{minimumFractionDigits:2}))}</strong></span>
+    <span style="background:${balance>0?'#fee2e2':'#d1fae5'};color:${balance>0?'#991b1b':'#065f46'};padding:2px 10px;border-radius:20px;font-size:12px">Balance: <strong>${esc(balance.toLocaleString('en-SG',{minimumFractionDigits:2}))}</strong></span>
+    <span style="background:var(--card2);border:1px solid var(--border);padding:2px 10px;border-radius:20px;font-size:12px">${esc(rows.length)} entries</span>`;
 
   if(!rows.length){ if(el) el.innerHTML='<div style="text-align:center;padding:16px;color:var(--muted)">No transactions found for this client in the selected period.</div>'; return; }
 
@@ -653,21 +653,21 @@ function previewSOA(){
       <th style="padding:5px 8px;border-bottom:1px solid var(--border)">Status</th>
     </tr></thead>
     <tbody>${rows.map(r=>`<tr style="border-bottom:1px solid var(--border);${r.status==='overdue'?'background:#fff5f5':''}">
-      <td style="padding:5px 8px">${r.date}</td>
-      <td style="padding:5px 8px;font-size:11px;color:var(--muted)">${r.docType}</td>
-      <td style="padding:5px 8px;font-family:monospace;font-size:11px">${r.docNo}</td>
-      <td style="padding:5px 8px;color:var(--muted)">${r.ref}</td>
-      <td style="padding:5px 8px;font-size:11px">${r.currency}</td>
-      <td style="padding:5px 8px;text-align:right">${r.invoiced_amt.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
-      <td style="padding:5px 8px;text-align:right;color:var(--success-tx)">${r.paid_amt>0?r.paid_amt.toLocaleString('en-SG',{minimumFractionDigits:2}):'—'}</td>
-      <td style="padding:5px 8px;text-align:right;font-weight:600;color:${r.balance>0?'#991b1b':'#065f46'}">${r.balance.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
-      <td style="padding:5px 8px"><span class="badge b-${r.status}">${r.status}</span></td>
+      <td style="padding:5px 8px">${esc(r.date)}</td>
+      <td style="padding:5px 8px;font-size:11px;color:var(--muted)">${esc(r.docType)}</td>
+      <td style="padding:5px 8px;font-family:monospace;font-size:11px">${esc(r.docNo)}</td>
+      <td style="padding:5px 8px;color:var(--muted)">${esc(r.ref)}</td>
+      <td style="padding:5px 8px;font-size:11px">${esc(r.currency)}</td>
+      <td style="padding:5px 8px;text-align:right">${esc(r.invoiced_amt.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
+      <td style="padding:5px 8px;text-align:right;color:var(--success-tx)">${esc(r.paid_amt>0?r.paid_amt.toLocaleString('en-SG',{minimumFractionDigits:2}):'—')}</td>
+      <td style="padding:5px 8px;text-align:right;font-weight:600;color:${r.balance>0?'#991b1b':'#065f46'}">${esc(r.balance.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
+      <td style="padding:5px 8px"><span class="badge b-${esc(r.status)}">${esc(r.status)}</span></td>
     </tr>`).join('')}
     <tr style="background:var(--card2);font-weight:700">
       <td colspan="5" style="padding:6px 8px;text-align:right">Total</td>
-      <td style="padding:6px 8px;text-align:right">${totalInvoiced.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
-      <td style="padding:6px 8px;text-align:right;color:var(--success-tx)">${totalPaid.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
-      <td style="padding:6px 8px;text-align:right;color:${balance>0?'#991b1b':'#065f46'}">${balance.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+      <td style="padding:6px 8px;text-align:right">${esc(totalInvoiced.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
+      <td style="padding:6px 8px;text-align:right;color:var(--success-tx)">${esc(totalPaid.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
+      <td style="padding:6px 8px;text-align:right;color:${balance>0?'#991b1b':'#065f46'}">${esc(balance.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
       <td></td>
     </tr></tbody></table>`;
 }
@@ -691,42 +691,42 @@ function buildSOAHtml(){
   .balance-box{border:2px solid #0B1F4B;border-radius:8px;padding:12px 18px;text-align:right;margin-top:14px;display:inline-block;min-width:220px}
   @media print{body{padding:8mm}@page{margin:8mm}}`;
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SOA — ${cl?.name||''}</title><style>${css}</style></head><body>
-  <h1>${CO.name}</h1>
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SOA — ${esc(cl?.name||'')}</title><style>${css}</style></head><body>
+  <h1>${esc(CO.name)}</h1>
   <div class="sub">Statement of Account &nbsp;·&nbsp; Period: <strong>${from}</strong> to <strong>${to}</strong></div>
   <div class="info">
-    <strong>${cl?.name||'—'}</strong>${cl?.tel?' &nbsp;·&nbsp; '+cl.tel:''}${cl?.email?' &nbsp;·&nbsp; '+cl.email:''}<br>
-    ${cl?.addr||''}${cl?.contact?'<br>Attn: '+cl.contact:''}
+    <strong>${esc(cl?.name||'—')}</strong>${cl?.tel?' &nbsp;·&nbsp; '+esc(cl.tel):''}${cl?.email?' &nbsp;·&nbsp; '+esc(cl.email):''}<br>
+    ${esc(cl?.addr||'')}${cl?.contact?'<br>Attn: '+esc(cl.contact):''}
   </div>
   <table><thead><tr>
     <th>Date</th><th>Type</th><th>Doc No.</th><th>Reference</th><th>Currency</th>
     <th class="r">Invoiced</th><th class="r">Paid</th><th class="r">Balance</th><th>Status</th>
   </tr></thead><tbody>
   ${rows.map(r=>`<tr class="${r.status==='overdue'?'overdue':''}">
-    <td>${r.date}</td>
-    <td style="color:#666;font-size:11px">${r.docType}</td>
-    <td style="font-family:monospace">${r.docNo}</td>
-    <td>${r.ref}</td>
-    <td>${r.currency}</td>
-    <td class="r">${r.invoiced_amt.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
-    <td class="r" style="color:#065f46">${r.paid_amt>0?r.paid_amt.toLocaleString('en-SG',{minimumFractionDigits:2}):'—'}</td>
-    <td class="r" style="color:${r.balance>0?'#991b1b':'#065f46'};font-weight:600">${r.balance.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
-    <td>${r.status}</td>
+    <td>${esc(r.date)}</td>
+    <td style="color:#666;font-size:11px">${esc(r.docType)}</td>
+    <td style="font-family:monospace">${esc(r.docNo)}</td>
+    <td>${esc(r.ref)}</td>
+    <td>${esc(r.currency)}</td>
+    <td class="r">${esc(r.invoiced_amt.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
+    <td class="r" style="color:#065f46">${esc(r.paid_amt>0?r.paid_amt.toLocaleString('en-SG',{minimumFractionDigits:2}):'—')}</td>
+    <td class="r" style="color:${r.balance>0?'#991b1b':'#065f46'};font-weight:600">${esc(r.balance.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
+    <td>${esc(r.status)}</td>
   </tr>`).join('')}
   <tr class="tot">
     <td colspan="5" class="r">Total</td>
-    <td class="r">${totalInvoiced.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
-    <td class="r" style="color:#065f46">${totalPaid.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
-    <td class="r" style="color:${balance>0?'#991b1b':'#065f46'}">${balance.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+    <td class="r">${esc(totalInvoiced.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
+    <td class="r" style="color:#065f46">${esc(totalPaid.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
+    <td class="r" style="color:${balance>0?'#991b1b':'#065f46'}">${esc(balance.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
     <td></td>
   </tr></tbody></table>
   <div style="text-align:right;margin-top:14px">
     <div class="balance-box">
       <div style="font-size:11px;color:#666;margin-bottom:4px">AMOUNT DUE</div>
-      <div style="font-size:22px;font-weight:800;color:${balance>0?'#991b1b':'#065f46'}">${dispCur!=='(multi)'?dispCur+' ':''} ${balance.toLocaleString('en-SG',{minimumFractionDigits:2})}</div>
+      <div style="font-size:22px;font-weight:800;color:${balance>0?'#991b1b':'#065f46'}">${dispCur!=='(multi)'?dispCur+' ':''} ${esc(balance.toLocaleString('en-SG',{minimumFractionDigits:2}))}</div>
     </div>
   </div>
-  <div class="footer">${CO.name} · ${CO.email} · ${CO.tel} · ${CO.addr}<br>Generated ${new Date().toLocaleString('en-SG')} · This is a computer-generated statement.</div>
+  <div class="footer">${esc(CO.name)} · ${esc(CO.email)} · ${esc(CO.tel)} · ${esc(CO.addr)}<br>Generated ${esc(new Date().toLocaleString('en-SG'))} · This is a computer-generated statement.</div>
   </body></html>`;
 }
 
@@ -789,7 +789,7 @@ function renderClientReportModal(){
   const curYYYYMM = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const firstDay = curYYYYMM+'-01';
   const lastDay  = today();
-  const clientOpts = DB.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  const clientOpts = DB.clients.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
 
   const html = `<div class="overlay"><div class="modal" style="width:620px;max-height:90vh;overflow-y:auto">
     <div class="modal-hdr">
@@ -830,7 +830,7 @@ function renderClientReportModal(){
           ${[...new Set([
               ...DB.quotations,...DB.invoices,...DB.dos,...DB.clientPOs
             ].map(d=>(d.date||'').slice(0,7)).filter(Boolean))].sort().reverse()
-            .map(m=>`<option value="${m}" ${m===curYYYYMM?'selected':''}>${fmtMonthLabel(m)}</option>`).join('')}
+            .map(m=>`<option value="${m}" ${m===curYYYYMM?'selected':''}>${esc(fmtMonthLabel(m))}</option>`).join('')}
         </select>
       </div>
     </div>
@@ -910,7 +910,7 @@ function previewClientReport(){
   if(card){
     if(cl){
       card.style.display='';
-      card.innerHTML=`<strong>${cl.name}</strong> &nbsp;·&nbsp; ${cl.contact||''} &nbsp;·&nbsp; ${cl.tel||''} &nbsp;·&nbsp; ${cl.email||''}${cl.addr?`<br><span style="color:var(--muted)">${cl.addr}</span>`:''}`;
+      card.innerHTML=`<strong>${esc(cl.name)}</strong> &nbsp;·&nbsp; ${esc(cl.contact||'')} &nbsp;·&nbsp; ${esc(cl.tel||'')} &nbsp;·&nbsp; ${esc(cl.email||'')}${cl.addr?`<br><span style="color:var(--muted)">${esc(cl.addr)}</span>`:''}`;
     } else { card.style.display='none'; }
   }
 
@@ -922,7 +922,7 @@ function previewClientReport(){
   const chips=document.getElementById('cr-chips');
   if(chips) chips.innerHTML = !cid ? '' : Object.entries(byType).map(([t,c])=>
     `<span style="background:var(--accent-bg);color:var(--accent-tx);padding:2px 10px;border-radius:20px;font-size:12px">${t}: <strong>${c}</strong></span>`
-  ).join('')+`<span style="background:var(--card2);border:1px solid var(--border);padding:2px 10px;border-radius:20px;font-size:12px">Total: <strong>${fmt(totalAmt)}</strong></span>`;
+  ).join('')+`<span style="background:var(--card2);border:1px solid var(--border);padding:2px 10px;border-radius:20px;font-size:12px">Total: <strong>${esc(fmt(totalAmt))}</strong></span>`;
 
   const el=document.getElementById('cr-summary');
   if(!el) return;
@@ -938,16 +938,16 @@ function previewClientReport(){
       <th style="padding:5px 8px;text-align:left;border-bottom:1px solid var(--border)">Status</th>
     </tr></thead>
     <tbody>${docs.map(d=>`<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:5px 8px;color:var(--muted)">${d._type}</td>
-      <td style="padding:5px 8px;font-family:monospace">${d.id}</td>
-      <td style="padding:5px 8px">${d.date||'—'}</td>
-      <td style="padding:5px 8px;color:var(--muted)">${d.ref||'—'}</td>
-      <td style="padding:5px 8px;text-align:right">${d.amount?fmt(d.amount,d.currency):'—'}</td>
-      <td style="padding:5px 8px"><span class="badge b-${d.status||''}">${d.status||'—'}</span></td>
+      <td style="padding:5px 8px;color:var(--muted)">${esc(d._type)}</td>
+      <td style="padding:5px 8px;font-family:monospace">${esc(d.id)}</td>
+      <td style="padding:5px 8px">${esc(d.date||'—')}</td>
+      <td style="padding:5px 8px;color:var(--muted)">${esc(d.ref||'—')}</td>
+      <td style="padding:5px 8px;text-align:right">${esc(d.amount?fmt(d.amount,d.currency):'—')}</td>
+      <td style="padding:5px 8px"><span class="badge b-${esc(d.status||'')}">${esc(d.status||'—')}</span></td>
     </tr>`).join('')}
     <tr style="background:var(--card2);font-weight:700">
       <td colspan="4" style="padding:6px 8px;text-align:right">Total</td>
-      <td style="padding:6px 8px;text-align:right">${fmt(totalAmt)}</td><td></td>
+      <td style="padding:6px 8px;text-align:right">${esc(fmt(totalAmt))}</td><td></td>
     </tr></tbody></table>`;
 }
 
@@ -961,15 +961,15 @@ function printClientReport(mode='print'){
   const byType={};
   docs.forEach(d=>{ byType[d._type]=(byType[d._type]||0)+1; });
   const rows=docs.map((d,i)=>
-    '<tr><td>'+(i+1)+'</td><td>'+d._type+'</td>'
-    +'<td style="font-family:monospace">'+d.id+'</td>'
-    +'<td>'+d.date+'</td><td>'+(d.ref||'—')+'</td>'
-    +'<td style="text-align:right">'+(d.amount?(d.currency||CO.currency)+' '+d.amount.toLocaleString('en-SG',{minimumFractionDigits:2}):'—')+'</td>'
-    +'<td>'+(d.status||'—')+'</td></tr>'
+    '<tr><td>'+(i+1)+'</td><td>'+esc(d._type)+'</td>'
+    +'<td style="font-family:monospace">'+esc(d.id)+'</td>'
+    +'<td>'+esc(d.date)+'</td><td>'+(esc(d.ref||'—'))+'</td>'
+    +'<td style="text-align:right">'+(esc(d.amount?(d.currency||CO.currency)+' '+d.amount.toLocaleString('en-SG',{minimumFractionDigits:2}):'—'))+'</td>'
+    +'<td>'+(esc(d.status||'—'))+'</td></tr>'
   ).join('');
   const chips=Object.entries(byType).map(([t,c])=>'<span class="chip">'+t+': '+c+'</span>').join('')
-    +'<span class="chip" style="background:#f0f4ff;color:#1e3a5f">Total: '+CO.currency+' '+totalAmt.toLocaleString('en-SG',{minimumFractionDigits:2})+'</span>';
-  const html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Client Report — '+cl.name+'</title>'
+    +'<span class="chip" style="background:#f0f4ff;color:#1e3a5f">Total: '+esc(CO.currency)+' '+esc(totalAmt.toLocaleString('en-SG',{minimumFractionDigits:2}))+'</span>';
+  const html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Client Report — '+esc(cl.name)+'</title>'
     +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:20px}'
     +'h1{font-size:18px;color:#1e3a5f;margin-bottom:2px}'
     +'.sub{font-size:12px;color:#666;margin-bottom:10px}'
@@ -980,15 +980,15 @@ function printClientReport(mode='print'){
     +'td{padding:6px 8px;border-bottom:1px solid #eee}tr:nth-child(even){background:#f9f9f9}'
     +'.r{text-align:right}.footer{margin-top:14px;font-size:10px;color:#aaa;border-top:1px solid #eee;padding-top:8px}'
     +'@media print{body{padding:8mm}@page{margin:8mm}}</style></head><body>'
-    +'<h1>'+CO.name+'</h1>'
+    +'<h1>'+esc(CO.name)+'</h1>'
     +'<div class="sub">Client Report &nbsp;·&nbsp; Period: <strong>'+period+'</strong> &nbsp;·&nbsp; Type: <strong>'+(type==='all'?'All':type)+'</strong></div>'
-    +'<div class="info"><strong>'+cl.name+'</strong>'+(cl.tel?' &nbsp;·&nbsp; '+cl.tel:'')+(cl.email?' &nbsp;·&nbsp; '+cl.email:'')+(cl.contact?' &nbsp;·&nbsp; Attn: '+cl.contact:'')+'</div>'
+    +'<div class="info"><strong>'+esc(cl.name)+'</strong>'+(cl.tel?' &nbsp;·&nbsp; '+esc(cl.tel):'')+(cl.email?' &nbsp;·&nbsp; '+esc(cl.email):'')+(cl.contact?' &nbsp;·&nbsp; Attn: '+esc(cl.contact):'')+'</div>'
     +'<div class="chips">'+chips+'</div>'
     +'<table><thead><tr><th>#</th><th>Type</th><th>Doc No.</th><th>Date</th><th>Ref</th><th class="r">Amount</th><th>Status</th></tr></thead>'
     +'<tbody>'+rows
-    +'<tr style="background:#f0f4ff;font-weight:700"><td colspan="5" style="text-align:right">Total</td><td style="text-align:right">'+CO.currency+' '+totalAmt.toLocaleString('en-SG',{minimumFractionDigits:2})+'</td><td></td></tr>'
+    +'<tr style="background:#f0f4ff;font-weight:700"><td colspan="5" style="text-align:right">Total</td><td style="text-align:right">'+esc(CO.currency)+' '+esc(totalAmt.toLocaleString('en-SG',{minimumFractionDigits:2}))+'</td><td></td></tr>'
     +'</tbody></table>'
-    +'<div class="footer">'+CO.name+' · '+CO.email+' · '+CO.tel+' · Generated '+new Date().toLocaleString('en-SG')+'</div>'
+    +'<div class="footer">'+esc(CO.name)+' · '+esc(CO.email)+' · '+esc(CO.tel)+' · Generated '+esc(new Date().toLocaleString('en-SG'))+'</div>'
     +'</body></html>';
   const blob=new Blob([html],{type:'text/html'});
   const url=URL.createObjectURL(blob);

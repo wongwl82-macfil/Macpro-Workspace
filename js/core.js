@@ -290,7 +290,7 @@ function showLogin(){
   ov.innerHTML=`
   <div style="background:#fff;border-radius:16px;padding:36px 32px;width:360px;max-width:92vw;box-shadow:0 24px 60px rgba(0,0,0,.5)">
     <div style="text-align:center;margin-bottom:24px">
-      <div style="font-size:26px;font-weight:800;color:#0B1F4B">${CO.shortName||'Macpro'}</div>
+      <div style="font-size:26px;font-weight:800;color:#0B1F4B">${esc(CO.shortName||'Macpro')}</div>
       <div style="font-size:12px;color:#aaa;margin-top:6px">Document Hub — Sign in to continue</div>
     </div>
     <div id="auth-err" style="display:none;background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px"></div>
@@ -526,6 +526,11 @@ localStorage.setItem('mp_db', JSON.stringify(DB));
 /* ═══════════════════════════════════════════════
    HELPERS
 ═══════════════════════════════════════════════ */
+// esc(): make any text safe to put into the page's HTML — inside an element or a "quoted" attribute.
+// Use it on everything that comes from data people typed (names, notes, addresses, references…),
+// so characters like < > & " ' always show as typed instead of being read as HTML.
+const ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>ESC_MAP[ch]);
 const cName = id => { const r=DB.clients.find(x=>x.id===id); return r?r.name:id||'—'; };
 const sName = id => { const r=DB.suppliers.find(x=>x.id===id); return r?r.name:id||'—'; };
 const pName = id => { const r=DB.products.find(x=>x.id===id); return r?r.name:id||'—'; };
@@ -571,7 +576,7 @@ function termsOptions(cur){
   const match=PAYMENT_TERMS.find(t=>t.toLowerCase()===String(cur).trim().toLowerCase());
   const list=match?PAYMENT_TERMS:[...PAYMENT_TERMS,cur];
   const sel=match||cur;
-  return list.map(t=>`<option ${t===sel?'selected':''}>${t}</option>`).join('');
+  return list.map(t=>`<option value="${esc(t)}" ${t===sel?'selected':''}>${esc(t)}</option>`).join('');
 }
 // "45 days" → 45, "Immediate" / "Cash …" → 0, anything else → null (leave the due date alone)
 const termsDays=t=>{ const m=/(\d+)\s*days?/i.exec(t||''); return m?+m[1]:(/immediate|cash/i.test(t||'')?0:null); };
@@ -752,7 +757,7 @@ function render(){
     case 'settings': C.innerHTML=renderSettings(); break;
     default:{
       const lbl={quotation:'New Quotation',invoice:'New Invoice',do:'New DO',po:'New PO'};
-      TA.innerHTML=`<button class="btn btn-navy" onclick="openDocForm('${PAGE}','new')">+ ${lbl[PAGE]||'New'}</button>`;
+      TA.innerHTML=`<button class="btn btn-navy" onclick="openDocForm('${PAGE}','new')">+ ${esc(lbl[PAGE]||'New')}</button>`;
       C.innerHTML=renderDocList();
     }
   }
@@ -810,7 +815,7 @@ function phoneSummary(){
   const items=LINE_ITEMS.filter(l=>(l.desc||'').trim()).map(l=>`<div style="display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--border)">
       <span style="font-weight:700;white-space:nowrap">${e(l.qty)} ${e(l.unit||'')}</span>
       <span style="flex:1;white-space:pre-line;overflow-wrap:anywhere">${e(l.desc)}</span>
-      ${money?`<span style="white-space:nowrap">${fmt((+l.qty||0)*(+l.unitPrice||0),cur)}</span>`:''}</div>`).join('')
+      ${money?`<span style="white-space:nowrap">${esc(fmt((+l.qty||0)*(+l.unitPrice||0),cur))}</span>`:''}</div>`).join('')
     ||(FORM.items?`<div style="padding:6px 0;border-top:1px solid var(--border);white-space:pre-line">${e(FORM.items)}</div>`:'');
   const card=document.createElement('div'); card.id='phone-summary'; card.className='panel';
   card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
@@ -823,7 +828,7 @@ function phoneSummary(){
     ${FORM.deliveryAddr||(DOC_TYPE==='do'&&party.addr)?`<div class="field-hint" style="white-space:pre-line">Deliver to: ${e(FORM.deliveryAddr||party.addr)}</div>`:''}
     <div style="margin-top:10px;font-size:13px">${items}</div>
     ${money?`<div style="display:flex;justify-content:space-between;border-top:2px solid var(--border-str);margin-top:4px;padding-top:8px;font-size:16px;font-weight:700">
-      <span>Total</span><span>${fmt(sub+calcGST(sub),cur)}</span></div>`:''}
+      <span>Total</span><span>${esc(fmt(sub+calcGST(sub),cur))}</span></div>`:''}
     <div class="field-hint" style="margin-top:8px">The full document is below — pinch to zoom.</div>`;
   a.before(card);
 }

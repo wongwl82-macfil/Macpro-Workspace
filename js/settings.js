@@ -20,14 +20,14 @@ function renderSettings(){
   ];
   return `<div class="settings-layout">
     <div>
-      <div class="s-nav">${tabs.map(t=>`<div class="s-nav-item ${S_TAB===t.id?'on':''}" onclick="S_TAB='${t.id}';render()">${t.label}</div>`).join('')}</div>
+      <div class="s-nav">${tabs.map(t=>`<div class="s-nav-item ${S_TAB===t.id?'on':''}" onclick="S_TAB='${esc(t.id)}';render()">${esc(t.label)}</div>`).join('')}</div>
       <div class="panel" style="margin-top:12px;padding:14px">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-          <div style="width:42px;height:42px;border-radius:10px;background:${CO.brand};color:${CO.accent};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">${inits(CO.shortName||CO.name)}</div>
-          <div><div style="font-weight:600;font-size:13px">${CO.name}</div><div style="font-size:11px;color:var(--muted)">${CO.country}</div></div>
+          <div style="width:42px;height:42px;border-radius:10px;background:${esc(CO.brand)};color:${esc(CO.accent)};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">${esc(inits(CO.shortName||CO.name))}</div>
+          <div><div style="font-weight:600;font-size:13px">${esc(CO.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(CO.country)}</div></div>
         </div>
         <div style="font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">
-          UEN: ${CO.uen}<br>GST: ${CO.gstOn?CO.gstRate+'% (registered)':'Not registered'}<br>Currency: ${CO.currency}
+          UEN: ${esc(CO.uen)}<br>GST: ${esc(CO.gstOn?CO.gstRate+'% (registered)':'Not registered')}<br>Currency: ${esc(CO.currency)}
         </div>
       </div>
     </div>
@@ -38,21 +38,21 @@ function renderSettings(){
 function renderSettingsPanel(){
   if(S_TAB==='profile') return `
     <div class="panel"><h4>Company identity</h4>
-      <div class="frow c2"><div class="fgrp"><label>Full company name</label><input id="s-name" value="${CO.name}"/></div><div class="fgrp"><label>Short / display name</label><input id="s-short" value="${CO.shortName||''}"/></div></div>
-      <div class="frow c2"><div class="fgrp"><label>Country</label><input id="s-country" value="${CO.country}"/></div><div class="fgrp"><label>Industry</label><input id="s-ind" value="${CO.industry}"/></div></div>
-      <div class="frow"><div class="fgrp"><label>Description</label><textarea id="s-desc">${CO.desc}</textarea></div></div>
-      <div class="frow c2"><div class="fgrp"><label>Sign-off name (quotation footer)</label><input id="s-signoff" value="${CO.signoff||''}" placeholder="e.g. Wong WL"/></div></div>
+      <div class="frow c2"><div class="fgrp"><label>Full company name</label><input id="s-name" value="${esc(CO.name)}"/></div><div class="fgrp"><label>Short / display name</label><input id="s-short" value="${esc(CO.shortName||'')}"/></div></div>
+      <div class="frow c2"><div class="fgrp"><label>Country</label><input id="s-country" value="${esc(CO.country)}"/></div><div class="fgrp"><label>Industry</label><input id="s-ind" value="${esc(CO.industry)}"/></div></div>
+      <div class="frow"><div class="fgrp"><label>Description</label><textarea id="s-desc">${esc(CO.desc)}</textarea></div></div>
+      <div class="frow c2"><div class="fgrp"><label>Sign-off name (quotation footer)</label><input id="s-signoff" value="${esc(CO.signoff||'')}" placeholder="e.g. Wong WL"/></div></div>
     </div>
     <div class="panel"><h4>Registration numbers</h4>
-      <div class="frow c2"><div class="fgrp"><label>UEN / Company reg. no.</label><input id="s-uen" value="${CO.uen}"/></div><div class="fgrp"><label>GST / Tax reg. no.</label><input id="s-gstreg" value="${CO.gst}"/></div></div>
+      <div class="frow c2"><div class="fgrp"><label>UEN / Company reg. no.</label><input id="s-uen" value="${esc(CO.uen)}"/></div><div class="fgrp"><label>GST / Tax reg. no.</label><input id="s-gstreg" value="${esc(CO.gst)}"/></div></div>
     </div>
     <div style="display:flex;justify-content:flex-end"><button class="btn btn-navy" onclick="saveSetting('profile')">Save changes</button></div>`;
 
   if(S_TAB==='contact') return `
     <div class="panel"><h4>Contact information</h4>
-      <div class="frow"><div class="fgrp"><label>Registered address</label><textarea id="s-addr" style="min-height:70px">${CO.addr}</textarea></div></div>
-      <div class="frow c2"><div class="fgrp"><label>Telephone</label><input id="s-tel" value="${CO.tel}"/></div><div class="fgrp"><label>Fax</label><input id="s-fax" value="${CO.fax||''}"/></div></div>
-      <div class="frow c2"><div class="fgrp"><label>Email</label><input id="s-email" type="email" value="${CO.email}"/></div><div class="fgrp"><label>Website</label><input id="s-web" value="${CO.website||''}"/></div></div>
+      <div class="frow"><div class="fgrp"><label>Registered address</label><textarea id="s-addr" style="min-height:70px">${esc(CO.addr)}</textarea></div></div>
+      <div class="frow c2"><div class="fgrp"><label>Telephone</label><input id="s-tel" value="${esc(CO.tel)}"/></div><div class="fgrp"><label>Fax</label><input id="s-fax" value="${esc(CO.fax||'')}"/></div></div>
+      <div class="frow c2"><div class="fgrp"><label>Email</label><input id="s-email" type="email" value="${esc(CO.email)}"/></div><div class="fgrp"><label>Website</label><input id="s-web" value="${esc(CO.website||'')}"/></div></div>
       <div class="frow c2"><div class="fgrp"><label>Default currency</label><select id="s-cur">${['SGD','MYR','USD','EUR','GBP'].map(c=>`<option ${CO.currency===c?'selected':''}>${c}</option>`).join('')}</select></div></div>
     </div>
     <div style="display:flex;justify-content:flex-end"><button class="btn btn-navy" onclick="saveSetting('contact')">Save changes</button></div>`;
@@ -68,14 +68,14 @@ function renderSettingsPanel(){
           <label class="toggle"><input type="checkbox" id="s-gston" ${CO.gstOn?'checked':''} onchange="document.getElementById('gst-rate-row').style.display=this.checked?'':'none'"/><span class="toggle-slider"></span></label>
         </div>
         <div style="font-size:12px;color:var(--muted);background:${CO.gstOn?'var(--success-bg)':'var(--warning-bg)'};color:${CO.gstOn?'var(--success-tx)':'var(--warning-tx)'};padding:8px 12px;border-radius:6px">
-          ${CO.gstOn?`✓ GST is <strong>enabled</strong> at <strong>${CO.gstRate}%</strong>. It will be applied and shown on all documents.`:'⚠ GST is <strong>disabled</strong>. No GST will be shown on documents.'}
+          ${CO.gstOn?`✓ GST is <strong>enabled</strong> at <strong>${esc(CO.gstRate)}%</strong>. It will be applied and shown on all documents.`:'⚠ GST is <strong>disabled</strong>. No GST will be shown on documents.'}
         </div>
       </div>
       <div id="gst-rate-row" style="${CO.gstOn?'':'display:none'}">
         <div class="frow c2" style="margin-top:12px">
           <div class="fgrp">
             <label>GST rate (%)</label>
-            <input type="number" id="s-gstrate" value="${CO.gstRate}" min="0" max="30" step="0.1"/>
+            <input type="number" id="s-gstrate" value="${esc(CO.gstRate)}" min="0" max="30" step="0.1"/>
             <div class="field-hint">Singapore standard rate: 9% · Malaysia SST: 6% · Custom: enter any rate</div>
           </div>
           <div class="fgrp">
@@ -93,7 +93,7 @@ function renderSettingsPanel(){
         <div class="frow">
           <div class="fgrp">
             <label>GST registration number</label>
-            <input id="s-gstno" value="${CO.gst}" placeholder="e.g. 201912345G"/>
+            <input id="s-gstno" value="${esc(CO.gst)}" placeholder="e.g. 201912345G"/>
             <div class="field-hint">Displayed on tax invoices and quotations</div>
           </div>
         </div>
@@ -111,11 +111,11 @@ function renderSettingsPanel(){
   if(S_TAB==='banking') return `
     <div class="panel"><h4>Bank accounts</h4>
       ${CO.banks.map((b,i)=>`<div class="bank-item">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><strong>${b.bank||'New account'}${b.currency?` (${b.currency})`:''}</strong><button class="btn btn-danger btn-sm" onclick="removeBank('${b.id}')">Remove</button></div>
-        <div class="frow c3"><div class="fgrp"><label>Bank name</label><input id="bk-bank-${i}" value="${b.bank}"/></div><div class="fgrp"><label>Account name</label><input id="bk-an-${i}" value="${b.accName}"/></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><strong>${esc(b.bank||'New account')}${b.currency?` (${esc(b.currency)})`:''}</strong><button class="btn btn-danger btn-sm" onclick="removeBank('${esc(b.id)}')">Remove</button></div>
+        <div class="frow c3"><div class="fgrp"><label>Bank name</label><input id="bk-bank-${i}" value="${esc(b.bank)}"/></div><div class="fgrp"><label>Account name</label><input id="bk-an-${i}" value="${esc(b.accName)}"/></div>
         <div class="fgrp"><label>Currency</label><select id="bk-cur-${i}">${['SGD','MYR','USD','EUR','GBP','AUD','JPY','CNY'].map(c=>`<option ${(b.currency||CO.currency)===c?'selected':''}>${c}</option>`).join('')}</select></div></div>
-        <div class="frow c3"><div class="fgrp"><label>Account number</label><input id="bk-no-${i}" value="${b.accNo}"/></div><div class="fgrp"><label>Swift / BIC</label><input id="bk-sw-${i}" value="${b.swift||''}"/></div><div class="fgrp"><label>Branch</label><input id="bk-br-${i}" value="${b.branch||''}"/></div></div>
-        <div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="btn btn-sm" onclick="saveBank(${i},'${b.id}')">Save account</button></div>
+        <div class="frow c3"><div class="fgrp"><label>Account number</label><input id="bk-no-${i}" value="${esc(b.accNo)}"/></div><div class="fgrp"><label>Swift / BIC</label><input id="bk-sw-${i}" value="${esc(b.swift||'')}"/></div><div class="fgrp"><label>Branch</label><input id="bk-br-${i}" value="${esc(b.branch||'')}"/></div></div>
+        <div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="btn btn-sm" onclick="saveBank(${i},'${esc(b.id)}')">Save account</button></div>
       </div>`).join('')}
       <button class="btn btn-gold" onclick="addBank()">+ Add bank account</button>
     </div>`;
@@ -123,30 +123,30 @@ function renderSettingsPanel(){
   if(S_TAB==='documents') return `
     <div class="panel"><h4>Document number prefixes</h4>
       <div class="frow c2">
-        <div class="fgrp"><label>Quotation base code</label><input id="dp-qt" value="${CO.prefix.quotation}" placeholder="e.g. Q"/></div>
-        <div class="fgrp"><label>Sales invoice base code</label><input id="dp-inv" value="${CO.prefix.invoice}" placeholder="e.g. MS-IV"/></div>
+        <div class="fgrp"><label>Quotation base code</label><input id="dp-qt" value="${esc(CO.prefix.quotation)}" placeholder="e.g. Q"/></div>
+        <div class="fgrp"><label>Sales invoice base code</label><input id="dp-inv" value="${esc(CO.prefix.invoice)}" placeholder="e.g. MS-IV"/></div>
       </div>
       <div class="frow c2">
-        <div class="fgrp"><label>Sales DO base code</label><input id="dp-do" value="${CO.prefix.do}" placeholder="e.g. MS-DO"/></div>
-        <div class="fgrp"><label>Sales order base code</label><input id="dp-so" value="${CO.prefix.clientPO}" placeholder="e.g. SO"/></div>
+        <div class="fgrp"><label>Sales DO base code</label><input id="dp-do" value="${esc(CO.prefix.do)}" placeholder="e.g. MS-DO"/></div>
+        <div class="fgrp"><label>Sales order base code</label><input id="dp-so" value="${esc(CO.prefix.clientPO)}" placeholder="e.g. SO"/></div>
       </div>
       <div class="frow c2">
-        <div class="fgrp"><label>Purchase order base code</label><input id="dp-po" value="${CO.prefix.po}" placeholder="e.g. PO"/></div>
+        <div class="fgrp"><label>Purchase order base code</label><input id="dp-po" value="${esc(CO.prefix.po)}" placeholder="e.g. PO"/></div>
       </div>
       <div class="frow c2">
-        <div class="fgrp"><label>Credit note base code</label><input id="dp-cn" value="${CO.prefix.creditNote}" placeholder="e.g. CN"/></div>
-        <div class="fgrp"><label>Debit note base code</label><input id="dp-dn" value="${CO.prefix.debitNote}" placeholder="e.g. DN"/></div>
+        <div class="fgrp"><label>Credit note base code</label><input id="dp-cn" value="${esc(CO.prefix.creditNote)}" placeholder="e.g. CN"/></div>
+        <div class="fgrp"><label>Debit note base code</label><input id="dp-dn" value="${esc(CO.prefix.debitNote)}" placeholder="e.g. DN"/></div>
       </div>
       <div style="background:var(--accent-bg);border:1px solid #bfdbfe;border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--accent-tx)">
         ℹ️ The YYMM code (e.g. <strong>2608</strong> for Aug 2026, <strong>2609</strong> for Sep 2026) is appended automatically. You only need to store the base code above.<br>
-        Full format: <strong>${CO.prefix.quotation}-${getYYMM()}-XXXX</strong> &nbsp;·&nbsp; <strong>${CO.prefix.invoice}-${getYYMM()}-XXXX</strong> &nbsp;·&nbsp; <strong>${CO.prefix.do}-${getYYMM()}-XXXX</strong> &nbsp;·&nbsp; <strong>${CO.prefix.po}-${getYYMM()}-XXXX</strong> &nbsp;·&nbsp; <strong>${CO.prefix.clientPO}-${getYYMM()}-XXXX</strong> &nbsp;·&nbsp; <strong>${CO.prefix.creditNote}-${getYYMM()}-XXXX</strong> &nbsp;·&nbsp; <strong>${CO.prefix.debitNote}-${getYYMM()}-XXXX</strong>
+        Full format: <strong>${esc(CO.prefix.quotation)}-${esc(getYYMM())}-XXXX</strong> &nbsp;·&nbsp; <strong>${esc(CO.prefix.invoice)}-${esc(getYYMM())}-XXXX</strong> &nbsp;·&nbsp; <strong>${esc(CO.prefix.do)}-${esc(getYYMM())}-XXXX</strong> &nbsp;·&nbsp; <strong>${esc(CO.prefix.po)}-${esc(getYYMM())}-XXXX</strong> &nbsp;·&nbsp; <strong>${esc(CO.prefix.clientPO)}-${esc(getYYMM())}-XXXX</strong> &nbsp;·&nbsp; <strong>${esc(CO.prefix.creditNote)}-${esc(getYYMM())}-XXXX</strong> &nbsp;·&nbsp; <strong>${esc(CO.prefix.debitNote)}-${esc(getYYMM())}-XXXX</strong>
       </div>
       <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--muted)">
-        Next: <strong>${fullPrefix('quotation')}-${String(CO.counter.quotation+1).padStart(4,'0')}</strong> &nbsp;|&nbsp; <strong>${fullPrefix('invoice')}-${String(CO.counter.invoice+1).padStart(4,'0')}</strong>
-        &nbsp;|&nbsp; <strong>${fullPrefix('do')}-${String(CO.counter.do+1).padStart(4,'0')}</strong>
-        &nbsp;|&nbsp; <strong>${fullPrefix('creditNote')}-${String(CO.counter.creditNote+1).padStart(4,'0')}</strong>
-        &nbsp;|&nbsp; <strong>${fullPrefix('debitNote')}-${String(CO.counter.debitNote+1).padStart(4,'0')}</strong>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">YYMM code auto-updates each month (current: <strong>${getYYMM()}</strong> = ${new Date().toLocaleString('en-SG',{month:'long',year:'numeric'})}). Counters reset to 0001 on the 1st of each month.</div>
+        Next: <strong>${esc(fullPrefix('quotation'))}-${esc(String(CO.counter.quotation+1).padStart(4,'0'))}</strong> &nbsp;|&nbsp; <strong>${esc(fullPrefix('invoice'))}-${esc(String(CO.counter.invoice+1).padStart(4,'0'))}</strong>
+        &nbsp;|&nbsp; <strong>${esc(fullPrefix('do'))}-${esc(String(CO.counter.do+1).padStart(4,'0'))}</strong>
+        &nbsp;|&nbsp; <strong>${esc(fullPrefix('creditNote'))}-${esc(String(CO.counter.creditNote+1).padStart(4,'0'))}</strong>
+        &nbsp;|&nbsp; <strong>${esc(fullPrefix('debitNote'))}-${esc(String(CO.counter.debitNote+1).padStart(4,'0'))}</strong>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">YYMM code auto-updates each month (current: <strong>${esc(getYYMM())}</strong> = ${esc(new Date().toLocaleString('en-SG',{month:'long',year:'numeric'}))}). Counters reset to 0001 on the 1st of each month.</div>
       </div>
     </div>
 
@@ -167,12 +167,12 @@ function renderSettingsPanel(){
               {label:'Credit Note',      key:'creditNote', pfx:fullPrefix('creditNote')},
               {label:'Debit Note',       key:'debitNote',  pfx:fullPrefix('debitNote')},
             ].map(r=>`<tr>
-              <td style="font-weight:600">${r.label}</td>
-              <td style="font-family:monospace;color:var(--muted)">${CO.counter[r.key]||0}</td>
-              <td style="font-family:monospace;color:var(--accent-tx)">${r.pfx}-${String((CO.counter[r.key]||0)+1).padStart(4,'0')}</td>
-              <td><input type="number" id="ctr-${r.key}" value="${CO.counter[r.key]||0}" min="0" step="1"
+              <td style="font-weight:600">${esc(r.label)}</td>
+              <td style="font-family:monospace;color:var(--muted)">${esc(CO.counter[r.key]||0)}</td>
+              <td style="font-family:monospace;color:var(--accent-tx)">${esc(r.pfx)}-${esc(String((CO.counter[r.key]||0)+1).padStart(4,'0'))}</td>
+              <td><input type="number" id="ctr-${esc(r.key)}" value="${esc(CO.counter[r.key]||0)}" min="0" step="1"
                 style="width:90px;padding:5px 8px;border:1px solid var(--border-str);border-radius:6px;background:var(--input);color:var(--text);font-size:13px;font-family:inherit;text-align:right"/></td>
-              <td><button class="btn btn-sm btn-danger" onclick="resetCounter('${r.key}')">Reset</button></td>
+              <td><button class="btn btn-sm btn-danger" onclick="resetCounter('${esc(r.key)}')">Reset</button></td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -183,11 +183,11 @@ function renderSettingsPanel(){
     </div>
 
     <div class="panel"><h4>Default terms &amp; footer text</h4>
-      <div class="frow"><div class="fgrp"><label>Quotation terms</label><textarea id="dt-qt">${CO.terms.quotation}</textarea></div></div>
-      <div class="frow"><div class="fgrp"><label>Invoice payment note</label><textarea id="dt-inv">${CO.terms.invoice}</textarea></div></div>
-      <div class="frow"><div class="fgrp"><label>Purchase order note</label><textarea id="dt-po">${CO.terms.po}</textarea></div></div>
-      <div class="frow"><div class="fgrp"><label>Delivery order note</label><textarea id="dt-do">${CO.terms.do}</textarea></div></div>
-      <div class="frow"><div class="fgrp"><label>Document footer</label><textarea id="dt-footer">${CO.footer}</textarea></div></div>
+      <div class="frow"><div class="fgrp"><label>Quotation terms</label><textarea id="dt-qt">${esc(CO.terms.quotation)}</textarea></div></div>
+      <div class="frow"><div class="fgrp"><label>Invoice payment note</label><textarea id="dt-inv">${esc(CO.terms.invoice)}</textarea></div></div>
+      <div class="frow"><div class="fgrp"><label>Purchase order note</label><textarea id="dt-po">${esc(CO.terms.po)}</textarea></div></div>
+      <div class="frow"><div class="fgrp"><label>Delivery order note</label><textarea id="dt-do">${esc(CO.terms.do)}</textarea></div></div>
+      <div class="frow"><div class="fgrp"><label>Document footer</label><textarea id="dt-footer">${esc(CO.footer)}</textarea></div></div>
     </div>
     <div style="display:flex;justify-content:flex-end"><button class="btn btn-navy" onclick="saveSetting('documents')">Save changes</button></div>`;
 
@@ -230,9 +230,9 @@ function renderSettingsPanel(){
               const r=rates.find(x=>x.currency===c)||{currency:c,rate:'',updatedAt:''};
               return `<tr>
                 <td style="font-weight:600;font-family:monospace;font-size:13px">${c}</td>
-                <td><input type="text" inputmode="decimal" id="fx-rate-${c}" value="${r.rate||''}" placeholder="e.g. 1.3400"
+                <td><input type="text" inputmode="decimal" id="fx-rate-${c}" value="${esc(r.rate||'')}" placeholder="e.g. 1.3400"
                   style="width:120px;padding:6px 9px;border:1px solid var(--border-str);border-radius:var(--radius);background:var(--input);color:var(--text);font-size:13px;font-family:inherit;text-align:right"/></td>
-                <td style="font-size:11px;color:var(--muted)">${r.updatedAt||'—'}</td>
+                <td style="font-size:11px;color:var(--muted)">${esc(r.updatedAt||'—')}</td>
                 <td><button class="btn btn-sm" onclick="saveFxRate('${c}')">Save</button></td>
               </tr>`;
             }).join('')}
@@ -248,8 +248,8 @@ function renderSettingsPanel(){
           const r=rates.find(x=>x.currency===c);
           return `<div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;text-align:center;min-width:100px">
             <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">1 ${c}</div>
-            <div style="font-size:16px;font-weight:700;color:var(--navy);margin-top:2px">${r?.rate ? r.rate+' '+base : '—'}</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px">${r?.updatedAt||'not set'}</div>
+            <div style="font-size:16px;font-weight:700;color:var(--navy);margin-top:2px">${esc(r?.rate ? r.rate+' '+base : '—')}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">${esc(r?.updatedAt||'not set')}</div>
           </div>`;
         }).join('')}
       </div>
@@ -267,8 +267,8 @@ function renderSettingsPanel(){
               ? `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">No staff added yet. Click "+ Add staff" below.</td></tr>`
               : (CO.staff||[]).map((s,i)=>`<tr>
               <td style="color:var(--muted);font-size:12px">${i+1}</td>
-              <td><input id="stf-name-${i}" value="${s.name}" placeholder="Full name" style="width:100%;padding:6px 9px;border:1px solid var(--border-str);border-radius:var(--radius);background:var(--input);color:var(--text);font-size:13px;font-family:inherit"/></td>
-              <td><input id="stf-mob-${i}" value="${s.mobile||''}" placeholder="+65 XXXX XXXX" style="width:100%;padding:6px 9px;border:1px solid var(--border-str);border-radius:var(--radius);background:var(--input);color:var(--text);font-size:13px;font-family:inherit"/></td>
+              <td><input id="stf-name-${i}" value="${esc(s.name)}" placeholder="Full name" style="width:100%;padding:6px 9px;border:1px solid var(--border-str);border-radius:var(--radius);background:var(--input);color:var(--text);font-size:13px;font-family:inherit"/></td>
+              <td><input id="stf-mob-${i}" value="${esc(s.mobile||'')}" placeholder="+65 XXXX XXXX" style="width:100%;padding:6px 9px;border:1px solid var(--border-str);border-radius:var(--radius);background:var(--input);color:var(--text);font-size:13px;font-family:inherit"/></td>
               <td style="white-space:nowrap">
                 <button class="btn btn-sm" onclick="saveStaffRow(${i})">Save</button>
                 &nbsp;<button class="btn btn-danger btn-sm" onclick="removeStaff(${i})">Remove</button>
@@ -282,18 +282,18 @@ function renderSettingsPanel(){
 
   if(S_TAB==='branding') return `
     <div class="panel"><h4>Brand colours</h4>
-      <div class="color-row"><div class="color-swatch" id="bc-sw" style="background:${CO.brand}"></div><span style="flex:1;font-size:13px">Primary / header colour</span><input type="color" id="s-brand" value="${CO.brand}" oninput="document.getElementById('bc-sw').style.background=this.value" style="width:80px;height:32px;border:none;cursor:pointer;border-radius:6px"/></div>
-      <div class="color-row"><div class="color-swatch" id="ac-sw" style="background:${CO.accent}"></div><span style="flex:1;font-size:13px">Accent / highlight colour</span><input type="color" id="s-accent" value="${CO.accent}" oninput="document.getElementById('ac-sw').style.background=this.value" style="width:80px;height:32px;border:none;cursor:pointer;border-radius:6px"/></div>
+      <div class="color-row"><div class="color-swatch" id="bc-sw" style="background:${esc(CO.brand)}"></div><span style="flex:1;font-size:13px">Primary / header colour</span><input type="color" id="s-brand" value="${esc(CO.brand)}" oninput="document.getElementById('bc-sw').style.background=this.value" style="width:80px;height:32px;border:none;cursor:pointer;border-radius:6px"/></div>
+      <div class="color-row"><div class="color-swatch" id="ac-sw" style="background:${esc(CO.accent)}"></div><span style="flex:1;font-size:13px">Accent / highlight colour</span><input type="color" id="s-accent" value="${esc(CO.accent)}" oninput="document.getElementById('ac-sw').style.background=this.value" style="width:80px;height:32px;border:none;cursor:pointer;border-radius:6px"/></div>
     </div>
     <div class="panel"><h4>Document header preview</h4>
       <div style="border-radius:8px;overflow:hidden;border:1px solid var(--border)">
-        <div style="background:${CO.brand};padding:14px 18px;display:flex;justify-content:space-between;align-items:center">
-          <div><div style="color:#fff;font-size:14px;font-weight:600">${CO.name}</div><div style="color:rgba(255,255,255,.5);font-size:11px">${CO.addr.split('\n')[0]}</div></div>
-          <div style="text-align:right"><div style="color:${CO.accent};font-size:16px;font-weight:700">Quotation</div><div style="color:rgba(255,255,255,.4);font-size:11px">${fullPrefix('quotation')}-XXXX</div></div>
+        <div style="background:${esc(CO.brand)};padding:14px 18px;display:flex;justify-content:space-between;align-items:center">
+          <div><div style="color:#fff;font-size:14px;font-weight:600">${esc(CO.name)}</div><div style="color:rgba(255,255,255,.5);font-size:11px">${esc(CO.addr.split('\n')[0])}</div></div>
+          <div style="text-align:right"><div style="color:${esc(CO.accent)};font-size:16px;font-weight:700">Quotation</div><div style="color:rgba(255,255,255,.4);font-size:11px">${esc(fullPrefix('quotation'))}-XXXX</div></div>
         </div>
         <div style="background:#fff;padding:12px 18px;font-size:12px;color:#111">
-          <div style="border-bottom:2px solid ${CO.brand};padding-bottom:6px;margin-bottom:8px">Bill to: <strong>ABB Pte Ltd</strong></div>
-          <table style="width:100%;border-collapse:collapse;font-size:11px"><tr style="background:${CO.brand}"><th style="color:#fff;padding:5px 8px;text-align:left">Description</th><th style="color:#fff;padding:5px 8px;text-align:right">Amount</th></tr><tr><td style="padding:5px 8px;border-bottom:1px solid #eee">WEG W22 AC Motor 75kW × 2</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee">SGD 38,400.00</td></tr></table>
+          <div style="border-bottom:2px solid ${esc(CO.brand)};padding-bottom:6px;margin-bottom:8px">Bill to: <strong>ABB Pte Ltd</strong></div>
+          <table style="width:100%;border-collapse:collapse;font-size:11px"><tr style="background:${esc(CO.brand)}"><th style="color:#fff;padding:5px 8px;text-align:left">Description</th><th style="color:#fff;padding:5px 8px;text-align:right">Amount</th></tr><tr><td style="padding:5px 8px;border-bottom:1px solid #eee">WEG W22 AC Motor 75kW × 2</td><td style="padding:5px 8px;text-align:right;border-bottom:1px solid #eee">SGD 38,400.00</td></tr></table>
         </div>
       </div>
     </div>
@@ -320,7 +320,7 @@ function renderAutomationSettings(){
       Keep copies somewhere other than this computer (e.g. Google Drive / OneDrive). The nightly backup below also keeps 30 days in Supabase Storage once the daily job is set up.</div>
   </div>
   <div class="panel"><h4>For your team</h4>
-    <div class="frow"><div class="fgrp"><label>Send team emails to</label><input id="au-summaryTo" value="${a.summaryTo||''}" placeholder="${CO.email||'you@company.com'} (default: company email)"/></div></div>
+    <div class="frow"><div class="fgrp"><label>Send team emails to</label><input id="au-summaryTo" value="${esc(a.summaryTo||'')}" placeholder="${esc(CO.email||'you@company.com')} (default: company email)"/></div></div>
     ${chk('dailySummary',a.dailySummary,'Morning summary (08:00)','Overdue and due-soon invoices, expiring and unanswered quotes, orders to deliver or invoice, POs awaiting goods.')}
     ${chk('monthlyReport',a.monthlyReport,'Monthly report (1st of each month)','Last month: invoiced, payments received, purchases, quotations and win rate, outstanding and overdue.')}
     ${chk('backup',a.backup,'Nightly backup','A full copy of all data in Supabase Storage → backups (last 30 days kept).')}
@@ -329,8 +329,8 @@ function renderAutomationSettings(){
     <div class="field-hint" style="margin-bottom:6px">Off until you switch them on. Clients need an email address on their record; your company email is copied on every message.</div>
     ${chk('reminders',a.reminders,'Payment reminders','One friendly reminder before the due date, one after it if still unpaid. Each is sent only once per invoice.')}
     <div class="frow c2" style="margin:4px 0 8px 26px">
-      <div class="fgrp"><label>Days before due</label><input type="number" id="au-reminderBeforeDays" min="0" max="30" value="${a.reminderBeforeDays}"/></div>
-      <div class="fgrp"><label>Days after due</label><input type="number" id="au-reminderAfterDays" min="1" max="90" value="${a.reminderAfterDays}"/></div>
+      <div class="fgrp"><label>Days before due</label><input type="number" id="au-reminderBeforeDays" min="0" max="30" value="${esc(a.reminderBeforeDays)}"/></div>
+      <div class="fgrp"><label>Days after due</label><input type="number" id="au-reminderAfterDays" min="1" max="90" value="${esc(a.reminderAfterDays)}"/></div>
     </div>
     ${chk('monthlySOA',a.monthlySOA,'Monthly statement of account (1st of each month)','Each client with unpaid invoices gets a statement listing them.')}
   </div>
@@ -340,7 +340,7 @@ function renderAutomationSettings(){
       <button class="btn" onclick="sendSummaryNow()">✉ Send the team summary now</button>
     </div>
     ${p?`<div style="margin-top:12px;font-size:12px;line-height:1.7">
-      <strong>${p.today}</strong> · team emails to ${p.teamTo.join(', ')||'<span style="color:var(--danger)">nobody — add an address above</span>'}<br>
+      <strong>${esc(p.today)}</strong> · team emails to ${p.teamTo.join(', ')||'<span style="color:var(--danger)">nobody — add an address above</span>'}<br>
       Summary: ${p.summary.map(s=>`${s.title} (${s.count})`).join(' · ')||'nothing needs attention'}<br>
       Reminders ${p.settings.reminders?'':'<em>(off)</em>'}: ${p.reminders.map(r=>`${r.invoice} ${r.kind} due → ${r.to}`).join(' · ')||'none due today'}<br>
       Statements on the 1st ${p.settings.monthlySOA?'':'<em>(off)</em>'}: ${p.statementsOn1st.map(s=>`${s.client} (${s.invoices})`).join(' · ')||'none'}

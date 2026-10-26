@@ -252,8 +252,8 @@ function renderDocForm(){
   const cur=FORM.currency||CO.currency;
   const lbl={quotation:'Quotation',invoice:'Tax Invoice','client-po':'Sales Order',po:'Purchase Order',do:'Delivery Order'};
   const party=isC?DB.clients.find(x=>x.id===FORM.clientId)||null:DB.suppliers.find(x=>x.id===FORM.supplierId)||null;
-  const cOpts=DB.clients.map(c=>`<option value="${c.id}" ${FORM.clientId===c.id?'selected':''}>${c.name}</option>`).join('');
-  const sOpts=DB.suppliers.map(s=>`<option value="${s.id}" ${FORM.supplierId===s.id?'selected':''}>${s.name}</option>`).join('');
+  const cOpts=DB.clients.map(c=>`<option value="${esc(c.id)}" ${FORM.clientId===c.id?'selected':''}>${esc(c.name)}</option>`).join('');
+  const sOpts=DB.suppliers.map(s=>`<option value="${esc(s.id)}" ${FORM.supplierId===s.id?'selected':''}>${esc(s.name)}</option>`).join('');
 
   return `
   <div class="tabs">
@@ -276,9 +276,9 @@ function renderDocForm(){
       <div class="fgrp"><label>${isPO?'Select supplier':'Select client'}</label>
         ${partyPicker(isC?'client':'supplier',isC?FORM.clientId:FORM.supplierId,onParty)}
       </div>
-      <div class="fgrp"><label>Attention to</label><input id="f-attn" value="${FORM.attn||''}" oninput="FORM.attn=this.value"/></div>
+      <div class="fgrp"><label>Attention to</label><input id="f-attn" value="${esc(FORM.attn||'')}" oninput="FORM.attn=this.value"/></div>
     </div>
-    ${party?`<div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;font-size:12px;color:var(--muted)">${party.addr||''} · ${party.email||''} · ${party.tel||''}</div>`:''}
+    ${party?`<div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;font-size:12px;color:var(--muted)">${esc(party.addr||'')} · ${esc(party.email||'')} · ${esc(party.tel||'')}</div>`:''}
   </div>
 
   <div class="panel"><h4>Document Details</h4>
@@ -295,8 +295,8 @@ function renderDocForm(){
       </div>
     </div>
     <div class="frow c3">
-      <div class="fgrp"><label>Date</label><input type="date" id="f-date" value="${FORM.date||today()}" oninput="FORM.date=this.value"/></div>
-      <div class="fgrp"><label>Their ref / PO no.</label><input id="f-ref" value="${FORM.ref||''}" oninput="FORM.ref=this.value"/></div>
+      <div class="fgrp"><label>Date</label><input type="date" id="f-date" value="${esc(FORM.date||today())}" oninput="FORM.date=this.value"/></div>
+      <div class="fgrp"><label>Their ref / PO no.</label><input id="f-ref" value="${esc(FORM.ref||'')}" oninput="FORM.ref=this.value"/></div>
       <div class="fgrp"><label>Currency</label>
         <select id="f-cur" onchange="FORM.currency=this.value;(DOC_TAB==='preview'||DOC_TYPE==='invoice')?render():recalc()">
           ${['SGD','MYR','USD','EUR','GBP','AUD','JPY','CNY'].map(c=>`<option ${cur===c?'selected':''}>${c}</option>`).join('')}
@@ -306,7 +306,7 @@ function renderDocForm(){
     <div class="frow c2">
       <div class="fgrp"><label>Payment terms</label><select id="f-terms" onchange="onTermsChange(this.value,DOC_TYPE==='invoice'?'f-valid':null)">${termsOptions(FORM.terms)}</select></div>
       <div class="fgrp"><label>${DOC_TYPE==='invoice'?'Due date':'Valid until'}</label>
-        <input type="date" id="f-valid" value="${DOC_TYPE==='invoice'?FORM.due:FORM.valid}" oninput="DOC_TYPE==='invoice'?FORM.due=this.value:FORM.valid=this.value"/>
+        <input type="date" id="f-valid" value="${esc(DOC_TYPE==='invoice'?FORM.due:FORM.valid)}" oninput="DOC_TYPE==='invoice'?FORM.due=this.value:FORM.valid=this.value"/>
       </div>
     </div>
     ${DOC_TYPE==='quotation'?`
@@ -314,61 +314,61 @@ function renderDocForm(){
       <div class="fgrp"><label>PIC (person in charge)</label>
         <select id="f-pic" onchange="onPICChange(this.value)">
           <option value="">— Select PIC —</option>
-          ${(CO.staff||[]).map(s=>`<option value="${s.name}" ${FORM.pic===s.name?'selected':''}>${s.name}</option>`).join('')}
+          ${(CO.staff||[]).map(s=>`<option value="${esc(s.name)}" ${FORM.pic===s.name?'selected':''}>${esc(s.name)}</option>`).join('')}
         </select>
       </div>
       <div class="fgrp"><label>PIC mobile / contact</label>
-        <input id="f-pictel" value="${FORM.picTel||''}" oninput="FORM.picTel=this.value" placeholder="Auto-filled from PIC selection"/>
+        <input id="f-pictel" value="${esc(FORM.picTel||'')}" oninput="FORM.picTel=this.value" placeholder="Auto-filled from PIC selection"/>
       </div>
     </div>
     <div class="frow c2">
-      <div class="fgrp"><label>Validity text (for footer)</label><input id="f-validtext" value="${FORM.validityText||'30 Days'}" oninput="FORM.validityText=this.value" placeholder="e.g. 30 Days"/></div>
-      <div class="fgrp"><label>Delivery term</label><input id="f-delterm" value="${FORM.deliveryTerm||'Ex-Singapore'}" oninput="FORM.deliveryTerm=this.value" placeholder="e.g. Ex-Singapore"/></div>
+      <div class="fgrp"><label>Validity text (for footer)</label><input id="f-validtext" value="${esc(FORM.validityText||'30 Days')}" oninput="FORM.validityText=this.value" placeholder="e.g. 30 Days"/></div>
+      <div class="fgrp"><label>Delivery term</label><input id="f-delterm" value="${esc(FORM.deliveryTerm||'Ex-Singapore')}" oninput="FORM.deliveryTerm=this.value" placeholder="e.g. Ex-Singapore"/></div>
     </div>
     <div class="frow">
-      <div class="fgrp"><label>Delivery remarks</label><input id="f-delivery" value="${FORM.delivery||''}" oninput="FORM.delivery=this.value" placeholder="e.g. Ex-stock, approx. 2–3 working weeks to Singapore"/></div>
+      <div class="fgrp"><label>Delivery remarks</label><input id="f-delivery" value="${esc(FORM.delivery||'')}" oninput="FORM.delivery=this.value" placeholder="e.g. Ex-stock, approx. 2–3 working weeks to Singapore"/></div>
     </div>`:''}
     ${(DOC_TYPE==='invoice'||DOC_TYPE==='do')?`
     <div style="border-top:1px solid var(--border);margin-top:6px;padding-top:12px">
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Address &amp; reference details</div>
       <div class="frow">
         <div class="fgrp"><label>Billing address (if different from client card)</label>
-          <textarea id="f-billingaddr" oninput="FORM.billingAddr=this.value" placeholder="Leave blank to use client address on file">${FORM.billingAddr||''}</textarea>
+          <textarea id="f-billingaddr" oninput="FORM.billingAddr=this.value" placeholder="Leave blank to use client address on file">${esc(FORM.billingAddr||'')}</textarea>
         </div>
       </div>
       <div class="frow">
         <div class="fgrp"><label>Delivery address</label>
-          <textarea id="f-deliveryaddr" oninput="FORM.deliveryAddr=this.value" placeholder="Delivery / ship-to address">${FORM.deliveryAddr||''}</textarea>
+          <textarea id="f-deliveryaddr" oninput="FORM.deliveryAddr=this.value" placeholder="Delivery / ship-to address">${esc(FORM.deliveryAddr||'')}</textarea>
         </div>
       </div>
       <div class="frow c2">
         <div class="fgrp"><label>Delivery attention (person / contact)</label>
-          <input id="f-deliveryattn" value="${FORM.deliveryAttn||''}" oninput="FORM.deliveryAttn=this.value" placeholder="Name and contact no."/>
+          <input id="f-deliveryattn" value="${esc(FORM.deliveryAttn||'')}" oninput="FORM.deliveryAttn=this.value" placeholder="Name and contact no."/>
         </div>
         <div class="fgrp"><label>Transport mode</label>
-          <input id="f-transport" value="${FORM.transport||''}" oninput="FORM.transport=this.value" placeholder="e.g. LAND, SEA, AIR"/>
+          <input id="f-transport" value="${esc(FORM.transport||'')}" oninput="FORM.transport=this.value" placeholder="e.g. LAND, SEA, AIR"/>
         </div>
       </div>
       <div class="frow c2">
         <div class="fgrp"><label>Our reference</label>
-          <input id="f-ourref" value="${FORM.ourRef||''}" oninput="FORM.ourRef=this.value" placeholder="Internal ref no."/>
+          <input id="f-ourref" value="${esc(FORM.ourRef||'')}" oninput="FORM.ourRef=this.value" placeholder="Internal ref no."/>
         </div>
         ${DOC_TYPE==='invoice'?`<div class="fgrp"><label>Delivery order no. (linked DO)</label>
-          <input id="f-doref" value="${FORM.doRef||''}" oninput="FORM.doRef=this.value" placeholder="e.g. MS-DO-2608-0001"/>
+          <input id="f-doref" value="${esc(FORM.doRef||'')}" oninput="FORM.doRef=this.value" placeholder="e.g. MS-DO-2608-0001"/>
         </div>`:`<div class="fgrp"><label>Invoice no. (linked invoice)</label>
-          <input id="f-invref" value="${FORM.invRef||''}" oninput="FORM.invRef=this.value" placeholder="e.g. MS-IV-2608-0001"/>
+          <input id="f-invref" value="${esc(FORM.invRef||'')}" oninput="FORM.invRef=this.value" placeholder="e.g. MS-IV-2608-0001"/>
         </div>`}
       </div>
       <div class="frow c2">
         <div class="fgrp"><label>Client PO no.</label>
-          <input id="f-poref" value="${FORM.poRef||FORM.ref||''}" oninput="FORM.poRef=this.value" placeholder="Client purchase order no."/>
+          <input id="f-poref" value="${esc(FORM.poRef||FORM.ref||'')}" oninput="FORM.poRef=this.value" placeholder="Client purchase order no."/>
         </div>
         ${DOC_TYPE==='invoice'?`<div class="fgrp"><label>Bank account (for payment)</label>
           <select id="f-bankid" onchange="FORM.bankId=this.value;render()">
             <option value="">Auto (match invoice currency)</option>
-            ${CO.banks.map(b=>`<option value="${b.id}" ${FORM.bankId===b.id?'selected':''}>${b.bank} — ${b.accNo}${b.currency?` (${b.currency})`:''}</option>`).join('')}
+            ${CO.banks.map(b=>`<option value="${esc(b.id)}" ${FORM.bankId===b.id?'selected':''}>${esc(b.bank)} — ${esc(b.accNo)}${b.currency?` (${esc(b.currency)})`:''}</option>`).join('')}
           </select>
-          ${(()=>{const pb=pickBank(FORM.currency||CO.currency);return pb?`<div style="font-size:11px;color:var(--muted);margin-top:4px">${FORM.bankId?'Selected':'Auto-selected'}: ${pb.bank} — ${pb.accNo} (${pb.currency||CO.currency})</div>`:'<div style="font-size:11px;color:var(--danger)">No bank account set up — add one in Settings</div>';})()}
+          ${(()=>{const pb=pickBank(FORM.currency||CO.currency);return pb?`<div style="font-size:11px;color:var(--muted);margin-top:4px">${FORM.bankId?'Selected':'Auto-selected'}: ${esc(pb.bank)} — ${esc(pb.accNo)} (${esc(pb.currency||CO.currency)})</div>`:'<div style="font-size:11px;color:var(--danger)">No bank account set up — add one in Settings</div>';})()}
         </div>`:''}
       </div>
     </div>`:''}
@@ -389,7 +389,7 @@ function renderDocForm(){
         <div>
           <div style="font-size:12px;font-weight:600;color:var(--text)">GST / Tax on this document</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px">
-            Override the company default (${CO.gstOn ? CO.gstRate+'%' : 'Off'}) for this document only
+            Override the company default (${esc(CO.gstOn ? CO.gstRate+'%' : 'Off')}) for this document only
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
@@ -431,7 +431,7 @@ function renderDocForm(){
       </div>
       <div id="gst-default-note" style="${FORM.docGstOn!==undefined?'display:none':''}">
         <div style="font-size:12px;padding:7px 12px;border-radius:6px;background:var(--card2);color:var(--muted)">
-          Using company default: ${CO.gstOn ? `GST <strong>${CO.gstRate}%</strong> applied` : 'GST <strong>not applicable</strong>'}
+          Using company default: ${CO.gstOn ? `GST <strong>${esc(CO.gstRate)}%</strong> applied` : 'GST <strong>not applicable</strong>'}
         </div>
       </div>
     </div>
@@ -450,14 +450,14 @@ function renderDocForm(){
     </table>
     <button class="btn btn-sm" style="margin-top:8px" onclick="addLine()">+ Add line</button>
     <div class="totals">
-      <div class="trow"><span>Subtotal</span><span id="t-sub">${fmt(sub,cur)}</span></div>
-      <div class="trow gst-row"><span id="t-gst-label">GST ${docGstOn()?docGstRate()+'%':'—'}</span><span id="t-gst">${docGstOn()?fmt(gst,cur):'Not applicable'}</span></div>
-      <div class="trow grand"><span>Total</span><span id="t-tot">${fmt(tot,cur)}</span></div>
+      <div class="trow"><span>Subtotal</span><span id="t-sub">${esc(fmt(sub,cur))}</span></div>
+      <div class="trow gst-row"><span id="t-gst-label">GST ${docGstOn()?docGstRate()+'%':'—'}</span><span id="t-gst">${esc(docGstOn()?fmt(gst,cur):'Not applicable')}</span></div>
+      <div class="trow grand"><span>Total</span><span id="t-tot">${esc(fmt(tot,cur))}</span></div>
     </div>
   </div>
 
   <div class="panel"><h4>Notes</h4>
-    <textarea id="f-notes" oninput="FORM.notes=this.value">${FORM.notes||''}</textarea>
+    <textarea id="f-notes" oninput="FORM.notes=this.value">${esc(FORM.notes||'')}</textarea>
   </div>
 
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:28px">
@@ -528,26 +528,26 @@ function renderLines(){
       <div class="prod-picker">
         <textarea class="line-desc" rows="1" oninput="LINE_ITEMS[${i}].desc=this.value;growDesc(this)" placeholder="Description — press Enter for a new line, or pick a product ↓">${escAttr(l.desc)}</textarea>
         <div class="prod-dropdown ${PROD_PICKER_IDX===i?'open':''}">
-          ${activeProds.map(p=>`<div class="prod-dd-item" onclick="selectProduct(${i},'${p.id}')">
-            <span class="prod-dd-code">${p.code}</span>${p.name}
-            <span class="prod-dd-price">${fmt(p.unitPrice,p.currency)}</span>
+          ${activeProds.map(p=>`<div class="prod-dd-item" onclick="selectProduct(${i},'${esc(p.id)}')">
+            <span class="prod-dd-code">${esc(p.code)}</span>${esc(p.name)}
+            <span class="prod-dd-price">${esc(fmt(p.unitPrice,p.currency))}</span>
           </div>`).join('')}
         </div>
       </div>
     </td>
-    <td><input type="text" inputmode="decimal" value="${l.qty||''}" placeholder="0"
+    <td><input type="text" inputmode="decimal" value="${esc(l.qty||'')}" placeholder="0"
       onfocus="this.select()"
       oninput="LINE_ITEMS[${i}].qty=parseFloat(this.value.replace(/,/g,''))||0;recalc()"
       style="width:60px;text-align:right;-moz-appearance:textfield;font-variant-numeric:tabular-nums"/></td>
     <td><select onchange="LINE_ITEMS[${i}].unit=this.value" style="width:auto;padding:5px 4px">
       ${['pcs','lot','set','unit','hr','kg','m','length'].map(u=>`<option ${l.unit===u?'selected':''}>${u}</option>`).join('')}
     </select></td>
-    <td><input type="text" inputmode="decimal" value="${l.unitPrice||''}" placeholder="0.00"
+    <td><input type="text" inputmode="decimal" value="${esc(l.unitPrice||'')}" placeholder="0.00"
       onfocus="this.select()"
       onblur="if(!this.value)this.value='';LINE_ITEMS[${i}].unitPrice=parseFloat(this.value.replace(/,/g,''))||0;recalc()"
       oninput="LINE_ITEMS[${i}].unitPrice=parseFloat(this.value.replace(/,/g,''))||0"
       style="text-align:right;width:100%;border:1px solid var(--border-str);border-radius:6px;padding:5px 8px;font-size:13px;background:var(--input);color:var(--text);font-family:inherit"/></td>
-    <td style="text-align:right;font-size:13px;font-weight:600;color:var(--text);padding-right:10px;white-space:nowrap">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+    <td style="text-align:right;font-size:13px;font-weight:600;color:var(--text);padding-right:10px;white-space:nowrap">${esc((l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
     <td style="white-space:nowrap">
       <button onclick="togglePicker(${i})" style="background:none;border:1px solid var(--border-str);border-radius:4px;cursor:pointer;color:var(--purple-tx);font-size:10px;padding:3px 5px" title="Pick from products">📦</button>
       <button onclick="remLine(${i})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:18px;line-height:1;margin-left:2px">×</button>
@@ -658,7 +658,7 @@ const fmtWhen=s=>s?new Date(s).toLocaleString('en-SG',{day:'2-digit',month:'shor
 function auditLine(rec){
   if(!rec||(!rec.createdAt&&!rec.updatedAt)) return '';
   const e=escAttr;
-  return `<div class="field-hint" style="margin:6px 0">${rec.createdAt?`Created ${fmtWhen(rec.createdAt)} by ${e(rec.createdBy)}`:'Created before tracking began'}${rec.updatedAt?` · Last edited ${fmtWhen(rec.updatedAt)} by ${e(rec.updatedBy)}`:''}</div>`;
+  return `<div class="field-hint" style="margin:6px 0">${rec.createdAt?`Created ${esc(fmtWhen(rec.createdAt))} by ${e(rec.createdBy)}`:'Created before tracking began'}${rec.updatedAt?` · Last edited ${esc(fmtWhen(rec.updatedAt))} by ${e(rec.updatedBy)}`:''}</div>`;
 }
 
 /* ── ISSUED DOCUMENTS ARE LOCKED ──
@@ -714,16 +714,16 @@ function decorateDocForm(){
   bar.style.cssText=`border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:12px;border:1px solid ${locked?'#fcd34d':'var(--border)'};background:${locked?'var(--warning-bg)':'var(--card)'}`;
   bar.innerHTML=`${locked?`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--warning-tx)">
       <div style="flex:1;min-width:220px">${rec.status==='cancelled'
-        ?`<strong>🚫 Voided</strong>${rec.voidedAt?` ${fmtWhen(rec.voidedAt)} by ${e(rec.voidedBy)}`:''}${rec.voidReason?` — “${e(rec.voidReason)}”`:''}. Kept for the record; it no longer counts.`
-        :`<strong>🔒 Issued — locked.</strong>${rec.issuedAt?` Issued ${fmtWhen(rec.issuedAt)} by ${e(rec.issuedBy)}.`:''} It can't be edited or deleted; correct it with a credit or debit note${isInv?' or void it':''}.`}</div>
+        ?`<strong>🚫 Voided</strong>${rec.voidedAt?` ${esc(fmtWhen(rec.voidedAt))} by ${e(rec.voidedBy)}`:''}${rec.voidReason?` — “${e(rec.voidReason)}”`:''}. Kept for the record; it no longer counts.`
+        :`<strong>🔒 Issued — locked.</strong>${rec.issuedAt?` Issued ${esc(fmtWhen(rec.issuedAt))} by ${e(rec.issuedBy)}.`:''} It can't be edited or deleted; correct it with a credit or debit note${isInv?' or void it':''}.`}</div>
       ${rec.status!=='cancelled'?`<div style="display:flex;gap:6px;flex-wrap:wrap">
         ${isInv?`<button class="btn btn-sm" onclick="fromINVtoNote('${id}','credit-note')">+ Credit note</button>
         <button class="btn btn-sm" onclick="fromINVtoNote('${id}','debit-note')">+ Debit note</button>`:''}
         ${rec.status!=='paid'?`<button class="btn btn-sm btn-danger" onclick="voidDoc('${DOC_TYPE}','${id}')">Void</button>`:''}
       </div>`:''}
     </div>`:''}
-    <div style="color:var(--muted);${locked?'margin-top:6px':''}">${rec.createdAt?`Created ${fmtWhen(rec.createdAt)} by ${e(rec.createdBy)}`:'Created before tracking began'}${rec.updatedAt?` · Last edited ${fmtWhen(rec.updatedAt)} by ${e(rec.updatedBy)}`:''}
-      ${hist.length?`<details style="margin-top:4px"><summary style="cursor:pointer">History (${hist.length})</summary>
+    <div style="color:var(--muted);${locked?'margin-top:6px':''}">${rec.createdAt?`Created ${esc(fmtWhen(rec.createdAt))} by ${e(rec.createdBy)}`:'Created before tracking began'}${rec.updatedAt?` · Last edited ${esc(fmtWhen(rec.updatedAt))} by ${e(rec.updatedBy)}`:''}
+      ${hist.length?`<details style="margin-top:4px"><summary style="cursor:pointer">History (${esc(hist.length)})</summary>
         <div style="margin-top:4px;line-height:1.7">${hist.map(h=>`${fmtWhen(h.at)} — ${e(h.by)}: ${e(h.action)}`).join('<br>')}</div></details>`:''}</div>`;
   C.prepend(bar);
   if(!locked||DOC_TAB==='preview') return;
@@ -927,17 +927,17 @@ function renderPreview(label,cur,sub,gst,tot,party){
     <div class="preview-doc" id="print-area" style="padding:0;max-width:740px;font-family:Arial,sans-serif;font-size:12px">
 
       <!-- ① HEADER BAR -->
-      <div style="background:${CO.brand};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
+      <div style="background:${esc(CO.brand)};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${CO.name}</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${CO.addr}</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${CO.tel}</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px">Email : ${CO.email}</div>
+          <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${esc(CO.name)}</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${esc(CO.addr)}</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${esc(CO.tel)}</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px">Email : ${esc(CO.email)}</div>
         </div>
         <div style="text-align:right">
-          <div style="color:${CO.accent};font-size:22px;font-weight:700;letter-spacing:1px">QUOTATION</div>
-          <div style="color:rgba(255,255,255,.7);font-size:10px;margin-top:6px">Company Reg No : ${CO.uen}</div>
-          <div style="color:rgba(255,255,255,.7);font-size:10px">GST Reg No : ${CO.gst}</div>
+          <div style="color:${esc(CO.accent)};font-size:22px;font-weight:700;letter-spacing:1px">QUOTATION</div>
+          <div style="color:rgba(255,255,255,.7);font-size:10px;margin-top:6px">Company Reg No : ${esc(CO.uen)}</div>
+          <div style="color:rgba(255,255,255,.7);font-size:10px">GST Reg No : ${esc(CO.gst)}</div>
         </div>
       </div>
 
@@ -946,20 +946,20 @@ function renderPreview(label,cur,sub,gst,tot,party){
         <!-- Left: client info -->
         <div style="padding:14px 24px;border-right:1px solid #ddd">
           <table style="font-size:12px;border-collapse:collapse;width:100%">
-            <tr><td style="color:#555;padding:2px 0;width:60px;white-space:nowrap;text-align:right">To :</td><td style="font-weight:700;padding:2px 0;padding-left:8px">${party?party.name:''}</td></tr>
-            ${party&&party.addr?`<tr><td></td><td style="padding:2px 0;padding-left:8px;color:#333;white-space:pre-line">${party.addr}</td></tr>`:''}
-            ${party&&party.tel?`<tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Tel :</td><td style="padding:2px 0;padding-left:8px">${party.tel}</td></tr>`:''}
-            <tr><td style="color:#555;padding:2px 0;padding-top:6px;text-align:right;white-space:nowrap">Attn :</td><td style="padding:2px 0;padding-top:6px;padding-left:8px;font-weight:600">${FORM.attn||''}</td></tr>
+            <tr><td style="color:#555;padding:2px 0;width:60px;white-space:nowrap;text-align:right">To :</td><td style="font-weight:700;padding:2px 0;padding-left:8px">${esc(party?party.name:'')}</td></tr>
+            ${party&&party.addr?`<tr><td></td><td style="padding:2px 0;padding-left:8px;color:#333;white-space:pre-line">${esc(party.addr)}</td></tr>`:''}
+            ${party&&party.tel?`<tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Tel :</td><td style="padding:2px 0;padding-left:8px">${esc(party.tel)}</td></tr>`:''}
+            <tr><td style="color:#555;padding:2px 0;padding-top:6px;text-align:right;white-space:nowrap">Attn :</td><td style="padding:2px 0;padding-top:6px;padding-left:8px;font-weight:600">${esc(FORM.attn||'')}</td></tr>
           </table>
         </div>
         <!-- Right: quotation meta -->
         <div style="padding:14px 24px;min-width:220px">
           <table style="font-size:12px;border-collapse:collapse;width:100%">
-            <tr><td style="color:#555;padding:2px 0;white-space:nowrap;width:105px;text-align:right">Quotation No :</td><td style="padding:2px 0;padding-left:10px;font-weight:700;color:${CO.brand}">${num}</td></tr>
+            <tr><td style="color:#555;padding:2px 0;white-space:nowrap;width:105px;text-align:right">Quotation No :</td><td style="padding:2px 0;padding-left:10px;font-weight:700;color:${esc(CO.brand)}">${num}</td></tr>
             <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Date :</td><td style="padding:2px 0;padding-left:10px">${dateStr}</td></tr>
-            <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">PIC :</td><td style="padding:2px 0;padding-left:10px">${FORM.pic||''}</td></tr>
-            <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Contact No :</td><td style="padding:2px 0;padding-left:10px">${FORM.picTel||'—'}</td></tr>
-            <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Client Ref :</td><td style="padding:2px 0;padding-left:10px">${FORM.ref||'—'}</td></tr>
+            <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">PIC :</td><td style="padding:2px 0;padding-left:10px">${esc(FORM.pic||'')}</td></tr>
+            <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Contact No :</td><td style="padding:2px 0;padding-left:10px">${esc(FORM.picTel||'—')}</td></tr>
+            <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Client Ref :</td><td style="padding:2px 0;padding-left:10px">${esc(FORM.ref||'—')}</td></tr>
             <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Page No :</td><td style="padding:2px 0;padding-left:10px">1/1</td></tr>
           </table>
         </div>
@@ -987,17 +987,17 @@ function renderPreview(label,cur,sub,gst,tot,party){
             ${LINE_ITEMS.map((l,i)=>`<tr>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${i+1}</td>
               <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word;vertical-align:top;color:#1a1a1a">${escAttr(l.desc)||'—'}</td>
-              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
-              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.qty}</td>
-              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc(l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
+              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc(l.qty)}</td>
+              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc((l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
             </tr>`).join('')}
             <!-- Sub-total row -->
             <tr>
               <td style="border:1px solid #ddd"></td>
-              <td style="border:1px solid #ddd;padding:6px 8px;color:#555;font-size:11px">${FORM.notes||''}</td>
+              <td style="border:1px solid #ddd;padding:6px 8px;color:#555;font-size:11px">${esc(FORM.notes||'')}</td>
               <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;font-weight:600;color:#1a1a1a;white-space:nowrap">Sub-Total (${cur})</td>
               <td style="border:1px solid #ddd"></td>
-              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;font-weight:600">${sub.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;font-weight:600">${esc(sub.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
             </tr>
             <!-- GST row -->
             <tr>
@@ -1005,7 +1005,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
               <td style="border:1px solid #ddd"></td>
               <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;color:#333">GST</td>
               <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${docGstOn()?docGstRate()+'%':'N/A'}</td>
-              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${docGstOn()?gst.toLocaleString('en-SG',{minimumFractionDigits:2}):'—'}</td>
+              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${esc(docGstOn()?gst.toLocaleString('en-SG',{minimumFractionDigits:2}):'—')}</td>
             </tr>
             <!-- Total row -->
             <tr style="background:#f5f5f5">
@@ -1013,7 +1013,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
               <td style="border:1px solid #ddd"></td>
               <td style="border:1px solid #ddd;padding:7px 8px;text-align:right;font-weight:700;white-space:nowrap">Total (${cur})</td>
               <td style="border:1px solid #ddd"></td>
-              <td style="border:1px solid #ddd;padding:7px 8px;text-align:center;font-weight:700">${tot.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+              <td style="border:1px solid #ddd;padding:7px 8px;text-align:center;font-weight:700">${esc(tot.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
             </tr>
           </tbody>
         </table>
@@ -1023,17 +1023,17 @@ function renderPreview(label,cur,sub,gst,tot,party){
       <div style="padding:14px 24px 10px;font-size:12px">
         <table style="border-collapse:collapse;width:100%">
           <tr><td style="color:#555;padding:3px 0;width:120px;white-space:nowrap;vertical-align:top;text-align:right">Price :</td><td style="padding:3px 0;padding-left:8px">Prices are in ${cur} Nett and subject to GST if applicable</td></tr>
-          <tr><td style="color:#555;padding:3px 0;vertical-align:top;text-align:right;white-space:nowrap">Delivery :</td><td style="padding:3px 0;padding-left:8px">${FORM.delivery||'Delivery stated above are subject to factory final confirmation and excluding holidays'}</td></tr>
-          <tr><td style="color:#555;padding:3px 0;vertical-align:top;text-align:right;white-space:nowrap">Delivery term :</td><td style="padding:3px 0;padding-left:8px">${FORM.deliveryTerm||'Ex-Singapore'}</td></tr>
-          <tr><td style="color:#555;padding:3px 0;vertical-align:top;text-align:right;white-space:nowrap">Payment term :</td><td style="padding:3px 0;padding-left:8px">${FORM.terms||'30 days'}</td></tr>
-          <tr><td style="color:#555;padding:3px 0;vertical-align:top;text-align:right;white-space:nowrap">Validity :</td><td style="padding:3px 0;padding-left:8px">${FORM.validityText||'30 Days'}</td></tr>
+          <tr><td style="color:#555;padding:3px 0;vertical-align:top;text-align:right;white-space:nowrap">Delivery :</td><td style="padding:3px 0;padding-left:8px">${esc(FORM.delivery||'Delivery stated above are subject to factory final confirmation and excluding holidays')}</td></tr>
+          <tr><td style="color:#555;padding:3px 0;vertical-align:top;text-align:right;white-space:nowrap">Delivery term :</td><td style="padding:3px 0;padding-left:8px">${esc(FORM.deliveryTerm||'Ex-Singapore')}</td></tr>
+          <tr><td style="color:#555;padding:3px 0;vertical-align:top;text-align:right;white-space:nowrap">Payment term :</td><td style="padding:3px 0;padding-left:8px">${esc(FORM.terms||'30 days')}</td></tr>
+          <tr><td style="color:#555;padding:3px 0;vertical-align:top;text-align:right;white-space:nowrap">Validity :</td><td style="padding:3px 0;padding-left:8px">${esc(FORM.validityText||'30 Days')}</td></tr>
         </table>
       </div>
 
       <!-- ⑥ SIGN-OFF -->
       <div style="padding:10px 24px 8px;font-size:12px">
         Best Regards<br><br>
-        <strong>${CO.signoff||'Wong WL'} / Mobile : ${CO.tel}</strong>
+        <strong>${esc(CO.signoff||'Wong WL')} / Mobile : ${esc(CO.tel)}</strong>
       </div>
 
       <!-- ⑦ DISCLAIMER -->
@@ -1053,17 +1053,17 @@ function renderPreview(label,cur,sub,gst,tot,party){
     <div class="preview-doc" id="print-area" style="padding:0;max-width:740px;font-family:Arial,sans-serif;font-size:12px">
 
       <!-- ① HEADER BAR -->
-      <div style="background:${CO.brand};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
+      <div style="background:${esc(CO.brand)};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${CO.name}</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${CO.addr}</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${CO.tel}</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px">Email : ${CO.email}</div>
+          <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${esc(CO.name)}</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${esc(CO.addr)}</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${esc(CO.tel)}</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px">Email : ${esc(CO.email)}</div>
         </div>
         <div style="text-align:right">
-          <div style="color:${CO.accent};font-size:22px;font-weight:700;letter-spacing:1px">SALES ORDER</div>
-          <div style="color:rgba(255,255,255,.7);font-size:10px;margin-top:6px">Company Reg No : ${CO.uen}</div>
-          <div style="color:rgba(255,255,255,.7);font-size:10px">GST Reg No : ${CO.gst}</div>
+          <div style="color:${esc(CO.accent)};font-size:22px;font-weight:700;letter-spacing:1px">SALES ORDER</div>
+          <div style="color:rgba(255,255,255,.7);font-size:10px;margin-top:6px">Company Reg No : ${esc(CO.uen)}</div>
+          <div style="color:rgba(255,255,255,.7);font-size:10px">GST Reg No : ${esc(CO.gst)}</div>
         </div>
       </div>
 
@@ -1072,21 +1072,21 @@ function renderPreview(label,cur,sub,gst,tot,party){
         <!-- Left: client info -->
         <div style="padding:14px 24px;border-right:1px solid #ddd">
           <table style="font-size:12px;border-collapse:collapse;width:100%">
-            <tr><td style="color:#555;padding:2px 0;width:60px;white-space:nowrap;text-align:right">To :</td><td style="font-weight:700;padding:2px 0;padding-left:8px">${party?party.name:''}</td></tr>
-            ${party&&party.addr?`<tr><td></td><td style="padding:2px 0;padding-left:8px;color:#333;white-space:pre-line">${party.addr}</td></tr>`:''}
-            ${party&&party.tel?`<tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Tel :</td><td style="padding:2px 0;padding-left:8px">${party.tel}</td></tr>`:''}
-            <tr><td style="color:#555;padding:2px 0;padding-top:6px;text-align:right;white-space:nowrap">Attn :</td><td style="padding:2px 0;padding-top:6px;padding-left:8px;font-weight:600">${FORM.attn||''}</td></tr>
+            <tr><td style="color:#555;padding:2px 0;width:60px;white-space:nowrap;text-align:right">To :</td><td style="font-weight:700;padding:2px 0;padding-left:8px">${esc(party?party.name:'')}</td></tr>
+            ${party&&party.addr?`<tr><td></td><td style="padding:2px 0;padding-left:8px;color:#333;white-space:pre-line">${esc(party.addr)}</td></tr>`:''}
+            ${party&&party.tel?`<tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Tel :</td><td style="padding:2px 0;padding-left:8px">${esc(party.tel)}</td></tr>`:''}
+            <tr><td style="color:#555;padding:2px 0;padding-top:6px;text-align:right;white-space:nowrap">Attn :</td><td style="padding:2px 0;padding-top:6px;padding-left:8px;font-weight:600">${esc(FORM.attn||'')}</td></tr>
           </table>
         </div>
         <!-- Right: SO meta -->
         <div style="padding:14px 24px;min-width:220px">
           <table style="font-size:12px;border-collapse:collapse;width:100%">
-            <tr><td style="color:#555;padding:2px 0;white-space:nowrap;width:110px;text-align:right">SO No :</td><td style="padding:2px 0;padding-left:10px;font-weight:700;color:${CO.brand}">${num}</td></tr>
+            <tr><td style="color:#555;padding:2px 0;white-space:nowrap;width:110px;text-align:right">SO No :</td><td style="padding:2px 0;padding-left:10px;font-weight:700;color:${esc(CO.brand)}">${num}</td></tr>
             <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Date :</td><td style="padding:2px 0;padding-left:10px">${dateStr}</td></tr>
-            <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">PIC :</td><td style="padding:2px 0;padding-left:10px">${FORM.pic||''}</td></tr>
-            <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Contact No :</td><td style="padding:2px 0;padding-left:10px">${FORM.picTel||'—'}</td></tr>
-            <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">PO No :</td><td style="padding:2px 0;padding-left:10px">${FORM.ref||'—'}</td></tr>
-            <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Quotation No :</td><td style="padding:2px 0;padding-left:10px">${FORM.srcQtId||'—'}</td></tr>
+            <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">PIC :</td><td style="padding:2px 0;padding-left:10px">${esc(FORM.pic||'')}</td></tr>
+            <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Contact No :</td><td style="padding:2px 0;padding-left:10px">${esc(FORM.picTel||'—')}</td></tr>
+            <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">PO No :</td><td style="padding:2px 0;padding-left:10px">${esc(FORM.ref||'—')}</td></tr>
+            <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Quotation No :</td><td style="padding:2px 0;padding-left:10px">${esc(FORM.srcQtId||'—')}</td></tr>
             <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Page No :</td><td style="padding:2px 0;padding-left:10px">1/1</td></tr>
           </table>
         </div>
@@ -1108,30 +1108,30 @@ function renderPreview(label,cur,sub,gst,tot,party){
             ${LINE_ITEMS.map((l,i)=>`<tr>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${i+1}</td>
               <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word;vertical-align:top;color:#1a1a1a">${escAttr(l.desc)||'—'}</td>
-              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
-              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.qty}</td>
-              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc(l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
+              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc(l.qty)}</td>
+              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc((l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
             </tr>`).join('')}
             <tr>
               <td style="border:1px solid #ddd"></td>
-              <td style="border:1px solid #ddd;padding:6px 8px;color:#555;font-size:11px">${FORM.notes||''}</td>
+              <td style="border:1px solid #ddd;padding:6px 8px;color:#555;font-size:11px">${esc(FORM.notes||'')}</td>
               <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;font-weight:600;color:#1a1a1a;white-space:nowrap">Sub-Total (${cur})</td>
               <td style="border:1px solid #ddd"></td>
-              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;font-weight:600">${sub.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;font-weight:600">${esc(sub.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
             </tr>
             <tr>
               <td style="border:1px solid #ddd"></td>
               <td style="border:1px solid #ddd"></td>
               <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;color:#333">GST</td>
               <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${docGstOn()?docGstRate()+'%':'N/A'}</td>
-              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${docGstOn()?gst.toLocaleString('en-SG',{minimumFractionDigits:2}):'—'}</td>
+              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${esc(docGstOn()?gst.toLocaleString('en-SG',{minimumFractionDigits:2}):'—')}</td>
             </tr>
             <tr style="background:#f5f5f5">
               <td style="border:1px solid #ddd"></td>
               <td style="border:1px solid #ddd"></td>
               <td style="border:1px solid #ddd;padding:7px 8px;text-align:right;font-weight:700;white-space:nowrap">Total (${cur})</td>
               <td style="border:1px solid #ddd"></td>
-              <td style="border:1px solid #ddd;padding:7px 8px;text-align:center;font-weight:700">${tot.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+              <td style="border:1px solid #ddd;padding:7px 8px;text-align:center;font-weight:700">${esc(tot.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
             </tr>
           </tbody>
         </table>
@@ -1140,9 +1140,9 @@ function renderPreview(label,cur,sub,gst,tot,party){
       <!-- ④ TERMS BLOCK -->
       <div style="padding:14px 24px 10px;font-size:12px">
         <table style="border-collapse:collapse;width:100%">
-          <tr><td style="color:#555;padding:3px 0;width:120px;white-space:nowrap;vertical-align:top;text-align:right">Delivery :</td><td style="padding:3px 0;padding-left:8px">${FORM.delivery||'Delivery stated above are subject to factory final confirmation and excluding holidays'}</td></tr>
-          <tr><td style="color:#555;padding:3px 0;vertical-align:top;text-align:right;white-space:nowrap">Delivery term :</td><td style="padding:3px 0;padding-left:8px">${FORM.deliveryTerm||'Ex-Singapore'}</td></tr>
-          <tr><td style="color:#555;padding:3px 0;vertical-align:top;text-align:right;white-space:nowrap">Payment term :</td><td style="padding:3px 0;padding-left:8px">${FORM.terms||'30 days'}</td></tr>
+          <tr><td style="color:#555;padding:3px 0;width:120px;white-space:nowrap;vertical-align:top;text-align:right">Delivery :</td><td style="padding:3px 0;padding-left:8px">${esc(FORM.delivery||'Delivery stated above are subject to factory final confirmation and excluding holidays')}</td></tr>
+          <tr><td style="color:#555;padding:3px 0;vertical-align:top;text-align:right;white-space:nowrap">Delivery term :</td><td style="padding:3px 0;padding-left:8px">${esc(FORM.deliveryTerm||'Ex-Singapore')}</td></tr>
+          <tr><td style="color:#555;padding:3px 0;vertical-align:top;text-align:right;white-space:nowrap">Payment term :</td><td style="padding:3px 0;padding-left:8px">${esc(FORM.terms||'30 days')}</td></tr>
         </table>
       </div>
 
@@ -1165,17 +1165,17 @@ function renderPreview(label,cur,sub,gst,tot,party){
     <div class="preview-doc" id="print-area" style="padding:0;max-width:740px;font-family:Arial,sans-serif;font-size:12px">
 
       <!-- ① HEADER BAR -->
-      <div style="background:${CO.brand};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
+      <div style="background:${esc(CO.brand)};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${CO.name}</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${CO.addr}</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${CO.tel}</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px">Email : ${CO.email}</div>
+          <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${esc(CO.name)}</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${esc(CO.addr)}</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${esc(CO.tel)}</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px">Email : ${esc(CO.email)}</div>
         </div>
         <div style="text-align:right">
-          <div style="color:${CO.accent};font-size:22px;font-weight:700;letter-spacing:1px">TAX INVOICE</div>
-          <div style="color:rgba(255,255,255,.7);font-size:10px;margin-top:6px">Company Reg No : ${CO.uen}</div>
-          <div style="color:rgba(255,255,255,.7);font-size:10px">GST Reg No : ${CO.gst}</div>
+          <div style="color:${esc(CO.accent)};font-size:22px;font-weight:700;letter-spacing:1px">TAX INVOICE</div>
+          <div style="color:rgba(255,255,255,.7);font-size:10px;margin-top:6px">Company Reg No : ${esc(CO.uen)}</div>
+          <div style="color:rgba(255,255,255,.7);font-size:10px">GST Reg No : ${esc(CO.gst)}</div>
         </div>
       </div>
 
@@ -1183,13 +1183,13 @@ function renderPreview(label,cur,sub,gst,tot,party){
       <div style="background:#f7f8fa;border-bottom:1px solid #ddd;padding:10px 24px;font-size:11px;display:grid;grid-template-columns:1fr 1fr;gap:2px 24px">
         <table style="border-collapse:collapse;width:100%"><tbody>
           <tr><td style="color:#555;padding:2px 0;width:110px;white-space:nowrap">Invoice No</td><td style="padding:2px 4px 2px 0">:</td><td style="padding:2px 0;font-weight:700">${num}</td></tr>
-          <tr><td style="color:#555;padding:2px 0;white-space:nowrap">Delivery Order No</td><td style="padding:2px 4px 2px 0">:</td><td style="padding:2px 0">${FORM.doRef||'—'}</td></tr>
-          <tr><td style="color:#555;padding:2px 0;white-space:nowrap">Our Reference</td><td style="padding:2px 4px 2px 0">:</td><td style="padding:2px 0">${FORM.ourRef||'—'}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;white-space:nowrap">Delivery Order No</td><td style="padding:2px 4px 2px 0">:</td><td style="padding:2px 0">${esc(FORM.doRef||'—')}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;white-space:nowrap">Our Reference</td><td style="padding:2px 4px 2px 0">:</td><td style="padding:2px 0">${esc(FORM.ourRef||'—')}</td></tr>
         </tbody></table>
         <table style="border-collapse:collapse;width:100%"><tbody>
           <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Date</td><td style="padding:2px 4px 2px 8px">:</td><td style="padding:2px 0">${dateStr}</td></tr>
-          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Purchase Order No</td><td style="padding:2px 4px 2px 8px">:</td><td style="padding:2px 0">${FORM.ref||'—'}</td></tr>
-          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Payment Term</td><td style="padding:2px 4px 2px 8px">:</td><td style="padding:2px 0">${FORM.terms||'30 Days'}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Purchase Order No</td><td style="padding:2px 4px 2px 8px">:</td><td style="padding:2px 0">${esc(FORM.ref||'—')}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Payment Term</td><td style="padding:2px 4px 2px 8px">:</td><td style="padding:2px 0">${esc(FORM.terms||'30 Days')}</td></tr>
         </tbody></table>
       </div>
 
@@ -1197,14 +1197,14 @@ function renderPreview(label,cur,sub,gst,tot,party){
       <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #ddd">
         <div style="padding:12px 24px;border-right:1px solid #ddd;font-size:12px">
           <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Billing Address</div>
-          <div style="font-weight:700">${party?party.name:''}</div>
-          <div style="white-space:pre-line;color:#333">${FORM.billingAddr||(party?party.addr||'':'')}</div>
-          ${FORM.attn?`<div style="margin-top:4px">Attn: <strong>${FORM.attn}</strong></div>`:''}
+          <div style="font-weight:700">${esc(party?party.name:'')}</div>
+          <div style="white-space:pre-line;color:#333">${esc(FORM.billingAddr||(party?party.addr||'':''))}</div>
+          ${FORM.attn?`<div style="margin-top:4px">Attn: <strong>${esc(FORM.attn)}</strong></div>`:''}
         </div>
         <div style="padding:12px 24px;font-size:12px">
           <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Delivery Address</div>
-          <div style="white-space:pre-line;color:#333">${FORM.deliveryAddr||''}</div>
-          ${FORM.deliveryAttn?`<div style="margin-top:4px">Attention: <strong>${FORM.deliveryAttn}</strong></div>`:''}
+          <div style="white-space:pre-line;color:#333">${esc(FORM.deliveryAddr||'')}</div>
+          ${FORM.deliveryAttn?`<div style="margin-top:4px">Attention: <strong>${esc(FORM.deliveryAttn)}</strong></div>`:''}
         </div>
       </div>
 
@@ -1224,30 +1224,30 @@ function renderPreview(label,cur,sub,gst,tot,party){
             ${LINE_ITEMS.map((l,i)=>`<tr>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${i+1}</td>
               <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word;vertical-align:top;color:#1a1a1a">${escAttr(l.desc)||'—'}</td>
-              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
-              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.qty}</td>
-              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc(l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
+              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc(l.qty)}</td>
+              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc((l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
             </tr>`).join('')}
             <tr>
               <td style="border:1px solid #ddd"></td>
-              <td style="border:1px solid #ddd;padding:6px 8px;color:#555;font-size:11px">Transport : ${FORM.transport||'—'}</td>
+              <td style="border:1px solid #ddd;padding:6px 8px;color:#555;font-size:11px">Transport : ${esc(FORM.transport||'—')}</td>
               <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;font-weight:600;color:#1a1a1a;white-space:nowrap">Sub-Total (${cur})</td>
               <td style="border:1px solid #ddd"></td>
-              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;font-weight:600">${sub.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;font-weight:600">${esc(sub.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
             </tr>
             <tr>
               <td style="border:1px solid #ddd"></td>
               <td style="border:1px solid #ddd"></td>
               <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;color:#333">GST</td>
               <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${docGstOn()?docGstRate()+'%':'N/A'}</td>
-              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${docGstOn()?gst.toLocaleString('en-SG',{minimumFractionDigits:2}):'—'}</td>
+              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${esc(docGstOn()?gst.toLocaleString('en-SG',{minimumFractionDigits:2}):'—')}</td>
             </tr>
             <tr style="background:#f5f5f5">
               <td style="border:1px solid #ddd"></td>
               <td style="border:1px solid #ddd"></td>
               <td style="border:1px solid #ddd;padding:7px 8px;text-align:right;font-weight:700;white-space:nowrap">Total (${cur})</td>
               <td style="border:1px solid #ddd"></td>
-              <td style="border:1px solid #ddd;padding:7px 8px;text-align:center;font-weight:700">${tot.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+              <td style="border:1px solid #ddd;padding:7px 8px;text-align:center;font-weight:700">${esc(tot.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
             </tr>
           </tbody>
         </table>
@@ -1256,12 +1256,12 @@ function renderPreview(label,cur,sub,gst,tot,party){
       <!-- ⑤ BANK DETAILS -->
       ${bank?`<div style="padding:14px 24px 10px;font-size:12px;border-top:1px solid #eee;margin-top:12px">
         <table style="border-collapse:collapse;font-size:12px">
-          <tr><td style="color:#555;padding:2px 0;width:100px;white-space:nowrap;text-align:right">Account Name :</td><td style="font-weight:600;padding:2px 0;padding-left:8px">${bank.accName}</td></tr>
-          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Account No :</td><td style="padding:2px 0;padding-left:8px">${bank.accNo}</td></tr>
-          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Currency :</td><td style="padding:2px 0;padding-left:8px">${bank.currency||CO.currency}</td></tr>
-          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Bank Name :</td><td style="padding:2px 0;padding-left:8px">${bank.bank}</td></tr>
-          ${bank.branch?`<tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Address :</td><td style="padding:2px 0;padding-left:8px">${bank.branch}</td></tr>`:''}
-          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Swift Code :</td><td style="padding:2px 0;padding-left:8px">${bank.swift}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;width:100px;white-space:nowrap;text-align:right">Account Name :</td><td style="font-weight:600;padding:2px 0;padding-left:8px">${esc(bank.accName)}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Account No :</td><td style="padding:2px 0;padding-left:8px">${esc(bank.accNo)}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Currency :</td><td style="padding:2px 0;padding-left:8px">${esc(bank.currency||CO.currency)}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Bank Name :</td><td style="padding:2px 0;padding-left:8px">${esc(bank.bank)}</td></tr>
+          ${bank.branch?`<tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Address :</td><td style="padding:2px 0;padding-left:8px">${esc(bank.branch)}</td></tr>`:''}
+          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Swift Code :</td><td style="padding:2px 0;padding-left:8px">${esc(bank.swift)}</td></tr>
         </table>
       </div>`:''}
 
@@ -1269,8 +1269,8 @@ function renderPreview(label,cur,sub,gst,tot,party){
       <div style="padding:10px 24px;font-size:11px;color:#555;border-top:1px solid #eee">
         <div>1/ Any discrepancies regarding this invoice should be lodged within THREE (3) days</div>
         <div>2/ Administration and interest charge at the rate 1% per month after the expiry of the Credit period given by the company.</div>
-        <div>3/ Payment by cheque should be crossed and made payable to ${CO.name}</div>
-        ${FORM.notes?`<div style="margin-top:6px">${FORM.notes}</div>`:''}
+        <div>3/ Payment by cheque should be crossed and made payable to ${esc(CO.name)}</div>
+        ${FORM.notes?`<div style="margin-top:6px">${esc(FORM.notes)}</div>`:''}
       </div>
 
       <!-- ⑦ DISCLAIMER -->
@@ -1291,17 +1291,17 @@ function renderPreview(label,cur,sub,gst,tot,party){
     <div class="preview-doc" id="print-area" style="padding:0;max-width:740px;font-family:Arial,sans-serif;font-size:12px">
 
       <!-- ① HEADER BAR -->
-      <div style="background:${CO.brand};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
+      <div style="background:${esc(CO.brand)};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${CO.name}</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${CO.addr}</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${CO.tel}</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px">Email : ${CO.email}</div>
+          <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${esc(CO.name)}</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${esc(CO.addr)}</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${esc(CO.tel)}</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px">Email : ${esc(CO.email)}</div>
         </div>
         <div style="text-align:right">
-          <div style="color:${CO.accent};font-size:22px;font-weight:700;letter-spacing:1px">DELIVERY ORDER</div>
-          <div style="color:rgba(255,255,255,.7);font-size:10px;margin-top:6px">Company Reg No : ${CO.uen}</div>
-          <div style="color:rgba(255,255,255,.7);font-size:10px">GST Reg No : ${CO.gst}</div>
+          <div style="color:${esc(CO.accent)};font-size:22px;font-weight:700;letter-spacing:1px">DELIVERY ORDER</div>
+          <div style="color:rgba(255,255,255,.7);font-size:10px;margin-top:6px">Company Reg No : ${esc(CO.uen)}</div>
+          <div style="color:rgba(255,255,255,.7);font-size:10px">GST Reg No : ${esc(CO.gst)}</div>
         </div>
       </div>
 
@@ -1309,13 +1309,13 @@ function renderPreview(label,cur,sub,gst,tot,party){
       <div style="background:#f7f8fa;border-bottom:1px solid #ddd;padding:10px 24px;font-size:11px;display:grid;grid-template-columns:1fr 1fr;gap:2px 24px">
         <table style="border-collapse:collapse;width:100%"><tbody>
           <tr><td style="color:#555;padding:2px 0;width:110px;white-space:nowrap">Delivery Order No</td><td style="padding:2px 4px 2px 0">:</td><td style="padding:2px 0;font-weight:700">${num}</td></tr>
-          <tr><td style="color:#555;padding:2px 0;white-space:nowrap">Invoice No</td><td style="padding:2px 4px 2px 0">:</td><td style="padding:2px 0">${FORM.invRef||FORM.ref||'—'}</td></tr>
-          <tr><td style="color:#555;padding:2px 0;white-space:nowrap">Our Reference</td><td style="padding:2px 4px 2px 0">:</td><td style="padding:2px 0">${FORM.ourRef||'—'}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;white-space:nowrap">Invoice No</td><td style="padding:2px 4px 2px 0">:</td><td style="padding:2px 0">${esc(FORM.invRef||FORM.ref||'—')}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;white-space:nowrap">Our Reference</td><td style="padding:2px 4px 2px 0">:</td><td style="padding:2px 0">${esc(FORM.ourRef||'—')}</td></tr>
         </tbody></table>
         <table style="border-collapse:collapse;width:100%"><tbody>
           <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Date</td><td style="padding:2px 4px 2px 8px">:</td><td style="padding:2px 0">${dateStr}</td></tr>
-          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Purchase Order No</td><td style="padding:2px 4px 2px 8px">:</td><td style="padding:2px 0">${FORM.poRef||'—'}</td></tr>
-          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Payment Term</td><td style="padding:2px 4px 2px 8px">:</td><td style="padding:2px 0">${FORM.terms||'30 Days'}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Purchase Order No</td><td style="padding:2px 4px 2px 8px">:</td><td style="padding:2px 0">${esc(FORM.poRef||'—')}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Payment Term</td><td style="padding:2px 4px 2px 8px">:</td><td style="padding:2px 0">${esc(FORM.terms||'30 Days')}</td></tr>
         </tbody></table>
       </div>
 
@@ -1323,14 +1323,14 @@ function renderPreview(label,cur,sub,gst,tot,party){
       <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #ddd">
         <div style="padding:12px 24px;border-right:1px solid #ddd;font-size:12px">
           <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Billing Address</div>
-          <div style="font-weight:700">${party?party.name:''}</div>
-          <div style="white-space:pre-line;color:#333">${FORM.billingAddr||(party?party.addr||'':'')}</div>
-          ${FORM.attn?`<div style="margin-top:4px">Attn: <strong>${FORM.attn}</strong></div>`:''}
+          <div style="font-weight:700">${esc(party?party.name:'')}</div>
+          <div style="white-space:pre-line;color:#333">${esc(FORM.billingAddr||(party?party.addr||'':''))}</div>
+          ${FORM.attn?`<div style="margin-top:4px">Attn: <strong>${esc(FORM.attn)}</strong></div>`:''}
         </div>
         <div style="padding:12px 24px;font-size:12px">
           <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Delivery Address</div>
-          <div style="white-space:pre-line;color:#333">${FORM.deliveryAddr||''}</div>
-          ${FORM.deliveryAttn?`<div style="margin-top:4px">Attention: <strong>${FORM.deliveryAttn}</strong></div>`:''}
+          <div style="white-space:pre-line;color:#333">${esc(FORM.deliveryAddr||'')}</div>
+          ${FORM.deliveryAttn?`<div style="margin-top:4px">Attention: <strong>${esc(FORM.deliveryAttn)}</strong></div>`:''}
         </div>
       </div>
 
@@ -1348,12 +1348,12 @@ function renderPreview(label,cur,sub,gst,tot,party){
             ${LINE_ITEMS.map((l,i)=>`<tr>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${i+1}</td>
               <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word;vertical-align:top;color:#1a1a1a">${escAttr(l.desc)||'—'}</td>
-              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.qty.toFixed(2)}</td>
+              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc(l.qty.toFixed(2))}</td>
             </tr>`).join('')}
             <tr>
               <td style="border:1px solid #ddd"></td>
-              <td style="border:1px solid #ddd;padding:6px 8px;color:#555;font-size:11px">Transport : ${FORM.transport||'—'}</td>
-              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;font-weight:600">Total ${LINE_ITEMS.reduce((s,l)=>s+l.qty,0).toFixed(2)}</td>
+              <td style="border:1px solid #ddd;padding:6px 8px;color:#555;font-size:11px">Transport : ${esc(FORM.transport||'—')}</td>
+              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;font-weight:600">Total ${esc(LINE_ITEMS.reduce((s,l)=>s+l.qty,0).toFixed(2))}</td>
             </tr>
           </tbody>
         </table>
@@ -1362,7 +1362,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
       <!-- ⑤ COMPLAINTS NOTE -->
       <div style="padding:14px 24px 10px;font-size:11px;color:#555">
         Complaints if any should be lodged within (3) days after delivery of goods. We will not be held responsible for any defects if brought to our notice
-        ${FORM.notes?`<div style="margin-top:6px">${FORM.notes}</div>`:''}
+        ${FORM.notes?`<div style="margin-top:6px">${esc(FORM.notes)}</div>`:''}
       </div>
 
       <!-- ⑥ SIGNATURE BLOCK -->
@@ -1391,16 +1391,16 @@ function renderPreview(label,cur,sub,gst,tot,party){
     <div class="preview-doc" id="print-area" style="padding:0;max-width:740px;font-family:Arial,sans-serif;font-size:12px">
 
       <!-- ① HEADER BAR -->
-      <div style="background:${CO.brand};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
+      <div style="background:${esc(CO.brand)};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${CO.name} (${CO.uen})</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${CO.addr}</div>
-          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${CO.tel}</div>
+          <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${esc(CO.name)} (${esc(CO.uen)})</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${esc(CO.addr)}</div>
+          <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${esc(CO.tel)}</div>
         </div>
         <div style="text-align:right">
-          <div style="color:${CO.accent};font-size:22px;font-weight:700;letter-spacing:1px">PURCHASE ORDER</div>
-          <div style="color:rgba(255,255,255,.7);font-size:10px;margin-top:6px">Company Reg No : ${CO.uen}</div>
-          <div style="color:rgba(255,255,255,.7);font-size:10px">GST Reg No : ${CO.gst}</div>
+          <div style="color:${esc(CO.accent)};font-size:22px;font-weight:700;letter-spacing:1px">PURCHASE ORDER</div>
+          <div style="color:rgba(255,255,255,.7);font-size:10px;margin-top:6px">Company Reg No : ${esc(CO.uen)}</div>
+          <div style="color:rgba(255,255,255,.7);font-size:10px">GST Reg No : ${esc(CO.gst)}</div>
         </div>
       </div>
 
@@ -1408,18 +1408,18 @@ function renderPreview(label,cur,sub,gst,tot,party){
       <div style="display:grid;grid-template-columns:1fr auto;gap:0;border-bottom:1px solid #ddd">
         <div style="padding:14px 24px;border-right:1px solid #ddd">
           <table style="font-size:12px;border-collapse:collapse;width:100%">
-            <tr><td style="color:#555;padding:2px 0;width:50px;white-space:nowrap;vertical-align:top">To :</td><td style="font-weight:700;padding:2px 0">${party?party.name:''}</td></tr>
-            ${party&&party.addr?`<tr><td></td><td style="padding:2px 0;color:#333;white-space:pre-line">${party.addr}</td></tr>`:''}
-            ${party&&party.tel?`<tr><td style="color:#555;padding:2px 0">Tel :</td><td style="padding:2px 0">${party.tel}</td></tr>`:''}
-            <tr><td style="color:#555;padding:6px 0 2px;vertical-align:top">Attn :</td><td style="padding:6px 0 2px;font-weight:600">${FORM.attn||''}</td></tr>
+            <tr><td style="color:#555;padding:2px 0;width:50px;white-space:nowrap;vertical-align:top">To :</td><td style="font-weight:700;padding:2px 0">${esc(party?party.name:'')}</td></tr>
+            ${party&&party.addr?`<tr><td></td><td style="padding:2px 0;color:#333;white-space:pre-line">${esc(party.addr)}</td></tr>`:''}
+            ${party&&party.tel?`<tr><td style="color:#555;padding:2px 0">Tel :</td><td style="padding:2px 0">${esc(party.tel)}</td></tr>`:''}
+            <tr><td style="color:#555;padding:6px 0 2px;vertical-align:top">Attn :</td><td style="padding:6px 0 2px;font-weight:600">${esc(FORM.attn||'')}</td></tr>
           </table>
         </div>
         <div style="padding:14px 24px;min-width:220px">
           <table style="font-size:12px;border-collapse:collapse;width:100%">
-            <tr><td style="color:#555;padding:2px 0;white-space:nowrap;padding-right:10px">PO No :</td><td style="padding:2px 0;font-weight:700;color:${CO.brand}">${num}</td></tr>
+            <tr><td style="color:#555;padding:2px 0;white-space:nowrap;padding-right:10px">PO No :</td><td style="padding:2px 0;font-weight:700;color:${esc(CO.brand)}">${num}</td></tr>
             <tr><td style="color:#555;padding:2px 0">Date :</td><td style="padding:2px 0">${dateStr}</td></tr>
-            <tr><td style="color:#555;padding:2px 0">Terms :</td><td style="padding:2px 0">${FORM.terms||'—'}</td></tr>
-            <tr><td style="color:#555;padding:2px 0">Our Ref No :</td><td style="padding:2px 0">${FORM.ref||'—'}</td></tr>
+            <tr><td style="color:#555;padding:2px 0">Terms :</td><td style="padding:2px 0">${esc(FORM.terms||'—')}</td></tr>
+            <tr><td style="color:#555;padding:2px 0">Our Ref No :</td><td style="padding:2px 0">${esc(FORM.ref||'—')}</td></tr>
             <tr><td style="color:#555;padding:2px 0">Page No :</td><td style="padding:2px 0">1/1</td></tr>
           </table>
         </div>
@@ -1441,17 +1441,17 @@ function renderPreview(label,cur,sub,gst,tot,party){
             ${LINE_ITEMS.map((l,i)=>`<tr>
               <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${i+1}</td>
               <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word;vertical-align:top;color:#1a1a1a">${escAttr(l.desc)||'—'}</td>
-              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
-              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.qty}</td>
-              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc(l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
+              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc(l.qty)}</td>
+              <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc((l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
             </tr>`).join('')}
             <!-- Transport + Sub-Total row -->
             <tr>
               <td style="border:1px solid #ddd"></td>
-              <td style="border:1px solid #ddd;padding:6px 8px;color:#555;font-size:11px">Transport : ${FORM.transport||'—'}</td>
+              <td style="border:1px solid #ddd;padding:6px 8px;color:#555;font-size:11px">Transport : ${esc(FORM.transport||'—')}</td>
               <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;font-weight:600;color:#1a1a1a;white-space:nowrap">Sub-Total (${cur})</td>
               <td style="border:1px solid #ddd"></td>
-              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;font-weight:600;color:#1a1a1a">${sub.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;font-weight:600;color:#1a1a1a">${esc(sub.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
             </tr>
             <!-- GST row -->
             <tr>
@@ -1459,7 +1459,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
               <td style="border:1px solid #ddd"></td>
               <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;color:#333">GST</td>
               <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;color:#333">${docGstOn()?docGstRate()+'%':'0%'}</td>
-              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;color:#333">${docGstOn()?gst.toLocaleString('en-SG',{minimumFractionDigits:2}):'-'}</td>
+              <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;color:#333">${esc(docGstOn()?gst.toLocaleString('en-SG',{minimumFractionDigits:2}):'-')}</td>
             </tr>
             <!-- Total row -->
             <tr style="background:#f5f5f5">
@@ -1467,7 +1467,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
               <td style="border:1px solid #ddd"></td>
               <td style="border:1px solid #ddd;padding:7px 8px;text-align:right;font-weight:700;color:#1a1a1a;white-space:nowrap">Total (${cur})</td>
               <td style="border:1px solid #ddd"></td>
-              <td style="border:1px solid #ddd;padding:7px 8px;text-align:center;font-weight:700;color:#1a1a1a">${tot.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+              <td style="border:1px solid #ddd;padding:7px 8px;text-align:center;font-weight:700;color:#1a1a1a">${esc(tot.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
             </tr>
           </tbody>
         </table>
@@ -1477,8 +1477,8 @@ function renderPreview(label,cur,sub,gst,tot,party){
       ${(FORM.deliveryTerm||FORM.delivery)?`
       <div style="padding:12px 24px 6px;font-size:12px">
         <table style="border-collapse:collapse;width:100%">
-          ${FORM.deliveryTerm?`<tr><td style="color:#555;padding:3px 0;width:100px;white-space:nowrap">Price :</td><td style="padding:3px 0">${FORM.deliveryTerm}</td></tr>`:''}
-          ${FORM.delivery?`<tr><td style="color:#555;padding:3px 0">Delivery :</td><td style="padding:3px 0">${FORM.delivery}</td></tr>`:''}
+          ${FORM.deliveryTerm?`<tr><td style="color:#555;padding:3px 0;width:100px;white-space:nowrap">Price :</td><td style="padding:3px 0">${esc(FORM.deliveryTerm)}</td></tr>`:''}
+          ${FORM.delivery?`<tr><td style="color:#555;padding:3px 0">Delivery :</td><td style="padding:3px 0">${esc(FORM.delivery)}</td></tr>`:''}
         </table>
       </div>`:''}
 
@@ -1488,13 +1488,13 @@ function renderPreview(label,cur,sub,gst,tot,party){
         <div style="margin-bottom:3px">2/ The Company will not be responsible for the payment of an invoice for which an official order has not been issued.</div>
         <div style="margin-bottom:3px">3/ If prices are higher than specified, please advise us immediately for approval.</div>
         <div>4/ Goods will be rejected, if found not in conformity with the terms of order.</div>
-        ${FORM.notes?`<div style="margin-top:6px">${FORM.notes}</div>`:''}
+        ${FORM.notes?`<div style="margin-top:6px">${esc(FORM.notes)}</div>`:''}
       </div>
 
       <!-- ⑥ SIGN-OFF -->
       <div style="padding:10px 24px 8px;font-size:12px">
         Best Regards<br><br>
-        <strong>${CO.signoff||'Wong WL'} / Mobile : ${CO.tel}</strong>
+        <strong>${esc(CO.signoff||'Wong WL')} / Mobile : ${esc(CO.tel)}</strong>
       </div>
 
       <!-- ⑦ DISCLAIMER -->
@@ -1511,52 +1511,52 @@ function renderPreview(label,cur,sub,gst,tot,party){
     <button class="btn" onclick="DOC_TAB='edit';render()">← Back to edit</button>
     <button class="btn" onclick="printDoc('print')">🖨 Print</button><button class="btn btn-navy" onclick="printDoc('pdf')">⬇ Download PDF</button>${emailButton()}
   </div>
-  <div class="preview-doc" id="print-area" style="border-top:4px solid ${CO.brand}">
+  <div class="preview-doc" id="print-area" style="border-top:4px solid ${esc(CO.brand)}">
     <div class="prev-hdr">
       <div>
-        <div style="font-size:15px;font-weight:700;color:${CO.brand}">${CO.name}</div>
-        <div style="font-size:11px;color:#555;white-space:pre-line;margin-top:3px">${CO.addr}</div>
-        <div style="font-size:11px;color:#555">Tel: ${CO.tel}${CO.fax?' · Fax: '+CO.fax:''}</div>
-        <div style="font-size:11px;color:#555">${CO.email}${CO.website?' · '+CO.website:''}</div>
-        <div style="font-size:11px;color:#555">UEN: ${CO.uen}${CO.gstOn?' · GST Reg: '+CO.gst:''}</div>
+        <div style="font-size:15px;font-weight:700;color:${esc(CO.brand)}">${esc(CO.name)}</div>
+        <div style="font-size:11px;color:#555;white-space:pre-line;margin-top:3px">${esc(CO.addr)}</div>
+        <div style="font-size:11px;color:#555">Tel: ${esc(CO.tel)}${esc(CO.fax?' · Fax: '+CO.fax:'')}</div>
+        <div style="font-size:11px;color:#555">${esc(CO.email)}${esc(CO.website?' · '+CO.website:'')}</div>
+        <div style="font-size:11px;color:#555">UEN: ${esc(CO.uen)}${esc(CO.gstOn?' · GST Reg: '+CO.gst:'')}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:20px;font-weight:700;color:${CO.brand}">${label}</div>
+        <div style="font-size:20px;font-weight:700;color:${esc(CO.brand)}">${label}</div>
         <div style="font-size:12px;font-family:monospace;color:#666">${num}</div>
-        <div style="font-size:11px;color:#666;margin-top:3px">Date: ${FORM.date||today()}</div>
-        ${FORM.ref?`<div style="font-size:11px;color:#666">Your ref: ${FORM.ref}</div>`:''}
+        <div style="font-size:11px;color:#666;margin-top:3px">Date: ${esc(FORM.date||today())}</div>
+        ${FORM.ref?`<div style="font-size:11px;color:#666">Your ref: ${esc(FORM.ref)}</div>`:''}
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid ${CO.brand};font-size:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid ${esc(CO.brand)};font-size:12px">
       <div>
         <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">${isPO?'To (Supplier)':'Bill / Ship to'}</div>
-        <div style="font-weight:700;font-size:13px">${party?party.name:'—'}</div>
-        ${FORM.attn?`<div>Attn: ${FORM.attn}</div>`:''}
-        <div style="color:#555;white-space:pre-line">${party?party.addr||'':''}</div>
+        <div style="font-weight:700;font-size:13px">${esc(party?party.name:'—')}</div>
+        ${FORM.attn?`<div>Attn: ${esc(FORM.attn)}</div>`:''}
+        <div style="color:#555;white-space:pre-line">${esc(party?party.addr||'':'')}</div>
       </div>
       <div>
         <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Payment terms</div>
-        <div>${FORM.terms||'30 days'}</div>
+        <div>${esc(FORM.terms||'30 days')}</div>
         <div style="margin-top:6px;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px">Currency</div>
         <div>${cur}</div>
       </div>
     </div>
     <table class="prev-tbl">
-      <thead><tr style="background:${CO.brand}"><th>#</th><th>Description</th><th>Qty</th><th>Unit</th><th class="r">Unit price</th><th class="r">Amount (${cur})</th></tr></thead>
-      <tbody>${LINE_ITEMS.map((l,i)=>`<tr><td style="vertical-align:top">${i+1}</td><td style="white-space:pre-line;overflow-wrap:anywhere;word-break:break-word">${escAttr(l.desc)||'—'}</td><td>${l.qty}</td><td>${l.unit}</td><td class="r">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td><td class="r">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td></tr>`).join('')}</tbody>
+      <thead><tr style="background:${esc(CO.brand)}"><th>#</th><th>Description</th><th>Qty</th><th>Unit</th><th class="r">Unit price</th><th class="r">Amount (${cur})</th></tr></thead>
+      <tbody>${LINE_ITEMS.map((l,i)=>`<tr><td style="vertical-align:top">${i+1}</td><td style="white-space:pre-line;overflow-wrap:anywhere;word-break:break-word">${escAttr(l.desc)||'—'}</td><td>${esc(l.qty)}</td><td>${esc(l.unit)}</td><td class="r">${esc(l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td><td class="r">${esc((l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2}))}</td></tr>`).join('')}</tbody>
     </table>
     <div style="display:flex;justify-content:flex-end">
       <table style="width:230px;font-size:12px">
-        <tr><td>Subtotal</td><td class="r">${cur} ${sub.toLocaleString('en-SG',{minimumFractionDigits:2})}</td></tr>
-        ${docGstOn()?`<tr><td>GST (${docGstRate()}%)</td><td class="r">${cur} ${gst.toLocaleString('en-SG',{minimumFractionDigits:2})}</td></tr>`:'<tr style="color:#888"><td>GST</td><td class="r">Not applicable</td></tr>'}
-        <tr style="font-weight:700;border-top:2px solid ${CO.brand}"><td style="padding-top:5px">Total</td><td class="r" style="padding-top:5px">${cur} ${tot.toLocaleString('en-SG',{minimumFractionDigits:2})}</td></tr>
+        <tr><td>Subtotal</td><td class="r">${cur} ${esc(sub.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td></tr>
+        ${docGstOn()?`<tr><td>GST (${docGstRate()}%)</td><td class="r">${cur} ${esc(gst.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td></tr>`:'<tr style="color:#888"><td>GST</td><td class="r">Not applicable</td></tr>'}
+        <tr style="font-weight:700;border-top:2px solid ${esc(CO.brand)}"><td style="padding-top:5px">Total</td><td class="r" style="padding-top:5px">${cur} ${esc(tot.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td></tr>
       </table>
     </div>
-    ${FORM.notes?`<div style="margin-top:12px;font-size:11px"><strong>Notes:</strong> ${FORM.notes}</div>`:''}
-    ${CO.terms[DOC_TYPE]?`<div style="margin-top:8px;font-size:11px;color:#555">${CO.terms[DOC_TYPE]}</div>`:''}
+    ${FORM.notes?`<div style="margin-top:12px;font-size:11px"><strong>Notes:</strong> ${esc(FORM.notes)}</div>`:''}
+    ${CO.terms[DOC_TYPE]?`<div style="margin-top:8px;font-size:11px;color:#555">${esc(CO.terms[DOC_TYPE])}</div>`:''}
     <div style="margin-top:16px;padding-top:10px;border-top:1px solid #eee;font-size:11px;color:#888">
-      ${bank?`Payment: ${bank.bank} · Acc name: ${bank.accName} · ${bank.accNo} · Swift: ${bank.swift}<br>`:''}
-      ${CO.footer}
+      ${bank?`Payment: ${esc(bank.bank)} · Acc name: ${esc(bank.accName)} · ${esc(bank.accNo)} · Swift: ${esc(bank.swift)}<br>`:''}
+      ${esc(CO.footer)}
     </div>
   </div>`;
 }
@@ -1584,7 +1584,7 @@ function printDoc(mode='print'){
   `;
   const pfxKey={quotation:'quotation',invoice:'invoice',po:'po',do:'do','client-po':'clientPO'}[DOC_TYPE]||DOC_TYPE;
   const docNum=EDIT_ID==='new'?`${fullPrefix(pfxKey)}-${String((CO.counter[pfxKey]||0)+1).padStart(4,'0')}`:EDIT_ID;
-  const html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+docNum+'</title><style>'+css+'</style></head><body>'+area.innerHTML+'</body></html>';
+  const html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(docNum)+'</title><style>'+css+'</style></head><body>'+area.innerHTML+'</body></html>';
 
   if(mode==='print'){
     // Use hidden iframe — triggers print dialog on current page, connects to printer
@@ -1628,8 +1628,8 @@ function renderSupInvoiceForm(){
   const gst=calcGST(sub); const tot=sub+gst;
   const cur=FORM.currency||CO.currency;
   const party=DB.suppliers.find(x=>x.id===FORM.supplierId)||null;
-  const sOpts=DB.suppliers.map(s=>`<option value="${s.id}" ${FORM.supplierId===s.id?'selected':''}>${s.name}</option>`).join('');
-  const poOpts=`<option value="">— None —</option>`+DB.pos.map(p=>`<option value="${p.id}" ${FORM.ref===p.id?'selected':''}>${p.id} · ${sName(p.supplierId)}</option>`).join('');
+  const sOpts=DB.suppliers.map(s=>`<option value="${esc(s.id)}" ${FORM.supplierId===s.id?'selected':''}>${esc(s.name)}</option>`).join('');
+  const poOpts=`<option value="">— None —</option>`+DB.pos.map(p=>`<option value="${esc(p.id)}" ${FORM.ref===p.id?'selected':''}>${esc(p.id)} · ${esc(sName(p.supplierId))}</option>`).join('');
   return `
   <div class="tabs">
     <div class="tab ${DOC_TAB==='edit'?'on':''}" onclick="DOC_TAB='edit';render()">✏️ Edit</div>
@@ -1642,9 +1642,9 @@ function renderSupInvoiceForm(){
       <div class="fgrp"><label>Supplier *</label>
         ${partyPicker('supplier',FORM.supplierId,onSupInvParty)}
       </div>
-      <div class="fgrp"><label>Attention to</label><input id="f-attn" value="${FORM.attn||''}" oninput="FORM.attn=this.value"/></div>
+      <div class="fgrp"><label>Attention to</label><input id="f-attn" value="${esc(FORM.attn||'')}" oninput="FORM.attn=this.value"/></div>
     </div>
-    ${party?`<div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;font-size:12px;color:var(--muted)">${party.addr||''} · ${party.email||''} · ${party.tel||''}</div>`:''}
+    ${party?`<div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;font-size:12px;color:var(--muted)">${esc(party.addr||'')} · ${esc(party.email||'')} · ${esc(party.tel||'')}</div>`:''}
   </div>
 
   <div class="panel"><h4>Invoice details</h4>
@@ -1652,13 +1652,13 @@ function renderSupInvoiceForm(){
       <div>
         <div style="font-size:10px;font-weight:700;color:var(--accent-tx);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Purchase Invoice No.</div>
         <div style="font-size:16px;font-weight:700;color:var(--navy);font-family:'SF Mono',Monaco,Consolas,monospace;letter-spacing:.5px">
-          ${EDIT_ID==='new'?`SINV-${String((CO.counter.supInvoice||0)+1).padStart(4,'0')}`:EDIT_ID}
+          ${EDIT_ID==='new'?`SINV-${esc(String((CO.counter.supInvoice||0)+1).padStart(4,'0'))}`:EDIT_ID}
         </div>
       </div>
       <div>${EDIT_ID==='new'?'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">NEW</span>':(isLockedDoc()?'<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">🔒 LOCKED</span>':'<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">EDITING</span>')}</div>
     </div>
     <div class="frow c3">
-      <div class="fgrp"><label>Invoice date *</label><input type="date" id="f-date" value="${FORM.date||today()}" oninput="FORM.date=this.value"/></div>
+      <div class="fgrp"><label>Invoice date *</label><input type="date" id="f-date" value="${esc(FORM.date||today())}" oninput="FORM.date=this.value"/></div>
       <div class="fgrp"><label>Due date</label><input type="date" id="f-due" value="${FORM.due||addDays(today(),30)}" oninput="FORM.due=this.value"/></div>
       <div class="fgrp"><label>Currency</label>
         <select id="f-cur" onchange="FORM.currency=this.value;recalc()">
@@ -1667,7 +1667,7 @@ function renderSupInvoiceForm(){
       </div>
     </div>
     <div class="frow c2">
-      <div class="fgrp"><label>Supplier's invoice no. *</label><input id="f-supref" value="${FORM.supplierRef||''}" oninput="FORM.supplierRef=this.value" placeholder="Their invoice reference"/></div>
+      <div class="fgrp"><label>Supplier's invoice no. *</label><input id="f-supref" value="${esc(FORM.supplierRef||'')}" oninput="FORM.supplierRef=this.value" placeholder="Their invoice reference"/></div>
       <div class="fgrp"><label>Our PO reference</label>
         <select id="f-ref" onchange="FORM.ref=this.value;const po=DB.pos.find(x=>x.id===this.value);if(po){FORM.supplierId=po.supplierId;FORM.currency=po.currency||CO.currency;FORM.terms=po.terms||FORM.terms;FORM.attn=po.attn||FORM.attn;FORM.notes=po.notes||FORM.notes;LINE_ITEMS=po.lines&&po.lines.length?po.lines.map(l=>({...l})):LINE_ITEMS;}render()">${poOpts}</select>
       </div>
@@ -1676,7 +1676,7 @@ function renderSupInvoiceForm(){
       <div class="fgrp"><label>Linked client invoice (project)</label>
         <select id="f-clinv" onchange="FORM.clientInvRef=this.value">
           <option value="">— Not linked —</option>
-          ${DB.invoices.map(i=>`<option value="${i.id}" ${FORM.clientInvRef===i.id?'selected':''}>${i.id} · ${cName(i.clientId)} · ${fmt(i.amount,i.currency)}</option>`).join('')}
+          ${DB.invoices.map(i=>`<option value="${esc(i.id)}" ${FORM.clientInvRef===i.id?'selected':''}>${esc(i.id)} · ${esc(cName(i.clientId))} · ${esc(fmt(i.amount,i.currency))}</option>`).join('')}
         </select>
         <div style="font-size:11px;color:var(--muted);margin-top:4px">Costs on this purchase invoice count against that client invoice in Project P&amp;L.</div>
       </div>
@@ -1692,7 +1692,7 @@ function renderSupInvoiceForm(){
     <!-- GST override (reuse same logic) -->
     <div style="border-top:1px solid var(--border);margin-top:6px;padding-top:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div><div style="font-size:12px;font-weight:600">GST on this invoice</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Company default: ${CO.gstOn?CO.gstRate+'%':'Off'}</div></div>
+        <div><div style="font-size:12px;font-weight:600">GST on this invoice</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Company default: ${esc(CO.gstOn?CO.gstRate+'%':'Off')}</div></div>
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:12px;color:var(--muted)">Default</span>
           <label class="toggle"><input type="checkbox" id="f-gst-override" ${FORM.docGstOn!==undefined?'checked':''} onchange="onGstOverrideToggle(this.checked)"/><span class="toggle-slider"></span></label>
@@ -1724,7 +1724,7 @@ function renderSupInvoiceForm(){
         </div>
       </div>
       <div id="gst-default-note" style="${FORM.docGstOn!==undefined?'display:none':''}">
-        <div style="font-size:12px;padding:7px 12px;border-radius:6px;background:var(--card2);color:var(--muted)">Using company default: ${CO.gstOn?`GST <strong>${CO.gstRate}%</strong> applied`:'GST <strong>not applicable</strong>'}</div>
+        <div style="font-size:12px;padding:7px 12px;border-radius:6px;background:var(--card2);color:var(--muted)">Using company default: ${CO.gstOn?`GST <strong>${esc(CO.gstRate)}%</strong> applied`:'GST <strong>not applicable</strong>'}</div>
       </div>
     </div>
   </div>
@@ -1737,13 +1737,13 @@ function renderSupInvoiceForm(){
     </table>
     <button class="btn btn-sm" style="margin-top:8px" onclick="addLine()">+ Add line</button>
     <div class="totals">
-      <div class="trow"><span>Subtotal</span><span id="t-sub">${fmt(sub,cur)}</span></div>
-      <div class="trow gst-row"><span id="t-gst-label">GST ${docGstOn()?docGstRate()+'%':'—'}</span><span id="t-gst">${docGstOn()?fmt(gst,cur):'Not applicable'}</span></div>
-      <div class="trow grand"><span>Total</span><span id="t-tot">${fmt(tot,cur)}</span></div>
+      <div class="trow"><span>Subtotal</span><span id="t-sub">${esc(fmt(sub,cur))}</span></div>
+      <div class="trow gst-row"><span id="t-gst-label">GST ${docGstOn()?docGstRate()+'%':'—'}</span><span id="t-gst">${esc(docGstOn()?fmt(gst,cur):'Not applicable')}</span></div>
+      <div class="trow grand"><span>Total</span><span id="t-tot">${esc(fmt(tot,cur))}</span></div>
     </div>
   </div>
 
-  <div class="panel"><h4>Notes</h4><textarea id="f-notes" oninput="FORM.notes=this.value">${FORM.notes||''}</textarea></div>
+  <div class="panel"><h4>Notes</h4><textarea id="f-notes" oninput="FORM.notes=this.value">${esc(FORM.notes||'')}</textarea></div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:28px">
     <button class="btn" onclick="DOC_TYPE=null;render()">Cancel</button>
     <button class="btn" onclick="DOC_TAB='preview';render()">Preview</button>
@@ -1758,49 +1758,49 @@ function renderSupInvoicePreview(cur,sub,gst,tot,party){
     <button class="btn" onclick="DOC_TAB='edit';render()">← Back</button>
     <button class="btn" onclick="printDoc('print')">🖨 Print</button><button class="btn btn-navy" onclick="printDoc('pdf')">⬇ Download PDF</button>${emailButton()}
   </div>
-  <div class="preview-doc" id="print-area" style="border-top:4px solid ${CO.brand}">
+  <div class="preview-doc" id="print-area" style="border-top:4px solid ${esc(CO.brand)}">
     <div class="prev-hdr">
       <div>
-        <div style="font-size:15px;font-weight:700;color:${CO.brand}">${CO.name}</div>
-        <div style="font-size:11px;color:#555;white-space:pre-line;margin-top:3px">${CO.addr}</div>
-        <div style="font-size:11px;color:#555">Tel: ${CO.tel} · ${CO.email}</div>
+        <div style="font-size:15px;font-weight:700;color:${esc(CO.brand)}">${esc(CO.name)}</div>
+        <div style="font-size:11px;color:#555;white-space:pre-line;margin-top:3px">${esc(CO.addr)}</div>
+        <div style="font-size:11px;color:#555">Tel: ${esc(CO.tel)} · ${esc(CO.email)}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:17px;font-weight:700;color:${CO.brand}">Purchase Invoice</div>
+        <div style="font-size:17px;font-weight:700;color:${esc(CO.brand)}">Purchase Invoice</div>
         <div style="font-size:12px;font-family:monospace;color:#666">${num}</div>
-        <div style="font-size:11px;color:#666;margin-top:3px">Date: ${FORM.date||today()}</div>
-        <div style="font-size:11px;color:#c0392b;font-weight:600">Due: ${FORM.due||'—'}</div>
+        <div style="font-size:11px;color:#666;margin-top:3px">Date: ${esc(FORM.date||today())}</div>
+        <div style="font-size:11px;color:#c0392b;font-weight:600">Due: ${esc(FORM.due||'—')}</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid ${CO.brand};font-size:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid ${esc(CO.brand)};font-size:12px">
       <div>
         <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">From (Supplier)</div>
-        <div style="font-weight:700;font-size:13px">${party?party.name:'—'}</div>
-        ${FORM.attn?`<div>Attn: ${FORM.attn}</div>`:''}
-        <div style="color:#555;white-space:pre-line">${party?party.addr||'':''}</div>
+        <div style="font-weight:700;font-size:13px">${esc(party?party.name:'—')}</div>
+        ${FORM.attn?`<div>Attn: ${esc(FORM.attn)}</div>`:''}
+        <div style="color:#555;white-space:pre-line">${esc(party?party.addr||'':'')}</div>
       </div>
       <div>
         <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">References</div>
-        <div>Supplier's Invoice No.: <strong>${FORM.supplierRef||'—'}</strong></div>
-        <div>Our PO ref: <strong>${FORM.ref||'—'}</strong></div>
-        <div style="margin-top:6px">Terms: ${FORM.terms||'—'}</div>
-        <div>Status: <strong>${FORM.status||'pending'}</strong></div>
+        <div>Supplier's Invoice No.: <strong>${esc(FORM.supplierRef||'—')}</strong></div>
+        <div>Our PO ref: <strong>${esc(FORM.ref||'—')}</strong></div>
+        <div style="margin-top:6px">Terms: ${esc(FORM.terms||'—')}</div>
+        <div>Status: <strong>${esc(FORM.status||'pending')}</strong></div>
       </div>
     </div>
     <table class="prev-tbl">
-      <thead><tr style="background:${CO.brand}"><th>#</th><th>Description</th><th>Qty</th><th>Unit</th><th class="r">Unit price</th><th class="r">Amount (${cur})</th></tr></thead>
-      <tbody>${LINE_ITEMS.map((l,i)=>`<tr><td style="vertical-align:top">${i+1}</td><td style="white-space:pre-line;overflow-wrap:anywhere;word-break:break-word">${escAttr(l.desc)||'—'}</td><td>${l.qty}</td><td>${l.unit}</td><td class="r">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td><td class="r">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td></tr>`).join('')}</tbody>
+      <thead><tr style="background:${esc(CO.brand)}"><th>#</th><th>Description</th><th>Qty</th><th>Unit</th><th class="r">Unit price</th><th class="r">Amount (${cur})</th></tr></thead>
+      <tbody>${LINE_ITEMS.map((l,i)=>`<tr><td style="vertical-align:top">${i+1}</td><td style="white-space:pre-line;overflow-wrap:anywhere;word-break:break-word">${escAttr(l.desc)||'—'}</td><td>${esc(l.qty)}</td><td>${esc(l.unit)}</td><td class="r">${esc(l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td><td class="r">${esc((l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2}))}</td></tr>`).join('')}</tbody>
     </table>
     <div style="display:flex;justify-content:flex-end">
       <table style="width:230px;font-size:12px">
-        <tr><td>Subtotal</td><td class="r">${cur} ${sub.toLocaleString('en-SG',{minimumFractionDigits:2})}</td></tr>
-        ${docGstOn()?`<tr><td>GST (${docGstRate()}%)</td><td class="r">${cur} ${gst.toLocaleString('en-SG',{minimumFractionDigits:2})}</td></tr>`:'<tr style="color:#888"><td>GST</td><td class="r">Not applicable</td></tr>'}
-        <tr style="font-weight:700;border-top:2px solid ${CO.brand}"><td style="padding-top:5px">Total</td><td class="r" style="padding-top:5px">${cur} ${tot.toLocaleString('en-SG',{minimumFractionDigits:2})}</td></tr>
+        <tr><td>Subtotal</td><td class="r">${cur} ${esc(sub.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td></tr>
+        ${docGstOn()?`<tr><td>GST (${docGstRate()}%)</td><td class="r">${cur} ${esc(gst.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td></tr>`:'<tr style="color:#888"><td>GST</td><td class="r">Not applicable</td></tr>'}
+        <tr style="font-weight:700;border-top:2px solid ${esc(CO.brand)}"><td style="padding-top:5px">Total</td><td class="r" style="padding-top:5px">${cur} ${esc(tot.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td></tr>
       </table>
     </div>
-    ${FORM.notes?`<div style="margin-top:12px;font-size:11px"><strong>Notes:</strong> ${FORM.notes}</div>`:''}
+    ${FORM.notes?`<div style="margin-top:12px;font-size:11px"><strong>Notes:</strong> ${esc(FORM.notes)}</div>`:''}
     <div style="margin-top:16px;padding-top:10px;border-top:1px solid #eee;font-size:11px;color:#888">
-      Internal record — ${CO.name} · ${CO.email}
+      Internal record — ${esc(CO.name)} · ${esc(CO.email)}
     </div>
   </div>`;
 }
@@ -1810,9 +1810,9 @@ function renderSupInvoicePreview(cur,sub,gst,tot,party){
 ═══════════════════════════════════════════════ */
 function renderSupDOForm(){
   const party=DB.suppliers.find(x=>x.id===FORM.supplierId)||null;
-  const sOpts=DB.suppliers.map(s=>`<option value="${s.id}" ${FORM.supplierId===s.id?'selected':''}>${s.name}</option>`).join('');
-  const poOpts=`<option value="">— None —</option>`+DB.pos.map(p=>`<option value="${p.id}" ${FORM.ref===p.id?'selected':''}>${p.id} · ${sName(p.supplierId)}</option>`).join('');
-  const siOpts=`<option value="">— None —</option>`+DB.supInvoices.map(si=>`<option value="${si.id}" ${FORM.sinvRef===si.id?'selected':''}>${si.id} · ${si.supplierRef||'no sup. ref'}</option>`).join('');
+  const sOpts=DB.suppliers.map(s=>`<option value="${esc(s.id)}" ${FORM.supplierId===s.id?'selected':''}>${esc(s.name)}</option>`).join('');
+  const poOpts=`<option value="">— None —</option>`+DB.pos.map(p=>`<option value="${esc(p.id)}" ${FORM.ref===p.id?'selected':''}>${esc(p.id)} · ${esc(sName(p.supplierId))}</option>`).join('');
+  const siOpts=`<option value="">— None —</option>`+DB.supInvoices.map(si=>`<option value="${esc(si.id)}" ${FORM.sinvRef===si.id?'selected':''}>${esc(si.id)} · ${esc(si.supplierRef||'no sup. ref')}</option>`).join('');
   return `
   <div class="tabs">
     <div class="tab ${DOC_TAB==='edit'?'on':''}" onclick="DOC_TAB='edit';render()">✏️ Edit</div>
@@ -1825,9 +1825,9 @@ function renderSupDOForm(){
       <div class="fgrp"><label>Supplier *</label>
         ${partyPicker('supplier',FORM.supplierId,onSupDOParty)}
       </div>
-      <div class="fgrp"><label>Attention to / Delivered by</label><input id="f-attn" value="${FORM.attn||''}" oninput="FORM.attn=this.value"/></div>
+      <div class="fgrp"><label>Attention to / Delivered by</label><input id="f-attn" value="${esc(FORM.attn||'')}" oninput="FORM.attn=this.value"/></div>
     </div>
-    ${party?`<div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;font-size:12px;color:var(--muted)">${party.name} · ${party.tel||''} · ${party.email||''}</div>`:''}
+    ${party?`<div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;font-size:12px;color:var(--muted)">${esc(party.name)} · ${esc(party.tel||'')} · ${esc(party.email||'')}</div>`:''}
   </div>
 
   <div class="panel"><h4>Delivery details</h4>
@@ -1835,14 +1835,14 @@ function renderSupDOForm(){
       <div>
         <div style="font-size:10px;font-weight:700;color:var(--accent-tx);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Goods Received No.</div>
         <div style="font-size:16px;font-weight:700;color:var(--navy);font-family:'SF Mono',Monaco,Consolas,monospace;letter-spacing:.5px">
-          ${EDIT_ID==='new'?`SDO-${String((CO.counter.supDO||0)+1).padStart(4,'0')}`:EDIT_ID}
+          ${EDIT_ID==='new'?`SDO-${esc(String((CO.counter.supDO||0)+1).padStart(4,'0'))}`:EDIT_ID}
         </div>
       </div>
       <div>${EDIT_ID==='new'?'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">NEW</span>':(isLockedDoc()?'<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">🔒 LOCKED</span>':'<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">EDITING</span>')}</div>
     </div>
     <div class="frow c2">
-      <div class="fgrp"><label>Delivery date (on DO)</label><input type="date" id="f-date" value="${FORM.date||today()}" oninput="FORM.date=this.value"/></div>
-      <div class="fgrp"><label>Date goods received *</label><input type="date" id="f-recdate" value="${FORM.receivedDate||today()}" oninput="FORM.receivedDate=this.value"/></div>
+      <div class="fgrp"><label>Delivery date (on DO)</label><input type="date" id="f-date" value="${esc(FORM.date||today())}" oninput="FORM.date=this.value"/></div>
+      <div class="fgrp"><label>Date goods received *</label><input type="date" id="f-recdate" value="${esc(FORM.receivedDate||today())}" oninput="FORM.receivedDate=this.value"/></div>
     </div>
     <div class="frow c2">
       <div class="fgrp"><label>Our PO reference</label><select id="f-ref" onchange="FORM.ref=this.value">${poOpts}</select></div>
@@ -1851,7 +1851,7 @@ function renderSupDOForm(){
       </div>
     </div>
     <div class="frow c2">
-      <div class="fgrp"><label>Received by (staff name)</label><input id="f-recby" value="${FORM.receivedBy||''}" oninput="FORM.receivedBy=this.value" placeholder="Name of person who received goods"/></div>
+      <div class="fgrp"><label>Received by (staff name)</label><input id="f-recby" value="${esc(FORM.receivedBy||'')}" oninput="FORM.receivedBy=this.value" placeholder="Name of person who received goods"/></div>
       <div class="fgrp"><label>Goods condition / status</label>
         <select id="f-status" onchange="FORM.status=this.value">
           ${['received','partial','rejected','pending'].map(s=>`<option ${(FORM.status||'received')===s?'selected':''}>${s}</option>`).join('')}
@@ -1862,10 +1862,10 @@ function renderSupDOForm(){
 
   <div class="panel"><h4>Items received</h4>
     <div class="fgrp" style="margin-bottom:10px"><label>Description of goods received *</label>
-      <textarea id="f-items" oninput="FORM.items=this.value" style="min-height:80px" placeholder="List items received, quantities, and any discrepancies…">${FORM.items||''}</textarea>
+      <textarea id="f-items" oninput="FORM.items=this.value" style="min-height:80px" placeholder="List items received, quantities, and any discrepancies…">${esc(FORM.items||'')}</textarea>
     </div>
     <div class="fgrp"><label>Notes / remarks (discrepancies, damage, short delivery, etc.)</label>
-      <textarea id="f-notes" oninput="FORM.notes=this.value" placeholder="Note any issues, short delivery, damaged items…">${FORM.notes||''}</textarea>
+      <textarea id="f-notes" oninput="FORM.notes=this.value" placeholder="Note any issues, short delivery, damaged items…">${esc(FORM.notes||'')}</textarea>
     </div>
   </div>
 
@@ -1884,8 +1884,8 @@ function renderCreditDebitForm(){
   const tot=sub+gst;
   const cur=FORM.currency||CO.currency;
   const party=isC?DB.clients.find(x=>x.id===FORM.clientId)||null:DB.suppliers.find(x=>x.id===FORM.supplierId)||null;
-  const cOpts=DB.clients.map(c=>`<option value="${c.id}" ${FORM.clientId===c.id?'selected':''}>${c.name}</option>`).join('');
-  const sOpts=DB.suppliers.map(s=>`<option value="${s.id}" ${FORM.supplierId===s.id?'selected':''}>${s.name}</option>`).join('');
+  const cOpts=DB.clients.map(c=>`<option value="${esc(c.id)}" ${FORM.clientId===c.id?'selected':''}>${esc(c.name)}</option>`).join('');
+  const sOpts=DB.suppliers.map(s=>`<option value="${esc(s.id)}" ${FORM.supplierId===s.id?'selected':''}>${esc(s.name)}</option>`).join('');
 
   return `
   <div class="tabs">
@@ -1907,8 +1907,8 @@ function renderCreditDebitForm(){
       </div>
     </div>
     <div class="frow c3">
-      <div class="fgrp"><label>Date</label><input type="date" id="f-date" value="${FORM.date||today()}" oninput="FORM.date=this.value"/></div>
-      <div class="fgrp"><label>Reason / Reference</label><input id="f-ref" value="${FORM.ref||''}" oninput="FORM.ref=this.value" placeholder="e.g. Against Invoice MS-IV-2609-0001"/></div>
+      <div class="fgrp"><label>Date</label><input type="date" id="f-date" value="${esc(FORM.date||today())}" oninput="FORM.date=this.value"/></div>
+      <div class="fgrp"><label>Reason / Reference</label><input id="f-ref" value="${esc(FORM.ref||'')}" oninput="FORM.ref=this.value" placeholder="e.g. Against Invoice MS-IV-2609-0001"/></div>
       <div class="fgrp"><label>Currency</label>
         <select id="f-cur" onchange="FORM.currency=this.value;recalc()">
           ${['SGD','MYR','USD','EUR','GBP','AUD','JPY','CNY'].map(c=>`<option ${cur===c?'selected':''}>${c}</option>`).join('')}
@@ -1917,10 +1917,10 @@ function renderCreditDebitForm(){
     </div>
     <div class="frow c2">
       <div class="fgrp"><label>Status</label>
-        <div style="padding:8px 0"><span class="badge b-${FORM.status||'draft'}">${FORM.status==='cancelled'?'voided':FORM.status||'draft'}</span>
+        <div style="padding:8px 0"><span class="badge b-${esc(FORM.status||'draft')}">${esc(FORM.status==='cancelled'?'voided':FORM.status||'draft')}</span>
           <span class="field-hint">${(FORM.status||'draft')==='draft'?' Use “Save & issue” when it is final.':''}</span></div>
       </div>
-      <div class="fgrp"><label>Attention to</label><input value="${FORM.attn||''}" oninput="FORM.attn=this.value"/></div>
+      <div class="fgrp"><label>Attention to</label><input value="${esc(FORM.attn||'')}" oninput="FORM.attn=this.value"/></div>
     </div>
   </div>
 
@@ -1931,14 +1931,14 @@ function renderCreditDebitForm(){
     </table>
     <button class="btn btn-sm" style="margin-top:8px" onclick="addLine()">+ Add line</button>
     <div class="totals">
-      <div class="trow"><span>Subtotal</span><span id="t-sub">${fmt(sub,cur)}</span></div>
-      <div class="trow gst-row"><span id="t-gst-label">GST ${docGstOn()?docGstRate()+'%':'—'}</span><span id="t-gst">${docGstOn()?fmt(gst,cur):'Not applicable'}</span></div>
-      <div class="trow grand"><span>${isCN?'Total Credit':'Total Debit'}</span><span id="t-tot">${fmt(tot,cur)}</span></div>
+      <div class="trow"><span>Subtotal</span><span id="t-sub">${esc(fmt(sub,cur))}</span></div>
+      <div class="trow gst-row"><span id="t-gst-label">GST ${docGstOn()?docGstRate()+'%':'—'}</span><span id="t-gst">${esc(docGstOn()?fmt(gst,cur):'Not applicable')}</span></div>
+      <div class="trow grand"><span>${isCN?'Total Credit':'Total Debit'}</span><span id="t-tot">${esc(fmt(tot,cur))}</span></div>
     </div>
   </div>
 
   <div class="panel"><h4>Notes</h4>
-    <textarea id="f-notes" oninput="FORM.notes=this.value">${FORM.notes||''}</textarea>
+    <textarea id="f-notes" oninput="FORM.notes=this.value">${esc(FORM.notes||'')}</textarea>
   </div>
 
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:28px">
@@ -1959,33 +1959,33 @@ function renderCreditDebitPreview(isCN,cur,sub,gst,tot,party){
     <button class="btn" onclick="printDoc('print')">🖨 Print</button><button class="btn btn-navy" onclick="printDoc('pdf')">⬇ Download PDF</button>${emailButton()}
   </div>
   <div class="preview-doc" id="print-area" style="padding:0;max-width:740px;font-family:Arial,sans-serif;font-size:12px">
-    <div style="background:${CO.brand};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
+    <div style="background:${esc(CO.brand)};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
       <div>
-        <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${CO.name}</div>
-        <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${CO.addr}</div>
-        <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${CO.tel}</div>
-        <div style="color:rgba(255,255,255,.75);font-size:11px">Email : ${CO.email}</div>
+        <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${esc(CO.name)}</div>
+        <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${esc(CO.addr)}</div>
+        <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${esc(CO.tel)}</div>
+        <div style="color:rgba(255,255,255,.75);font-size:11px">Email : ${esc(CO.email)}</div>
       </div>
       <div style="text-align:right">
         <div style="color:${isCN?'#4ade80':'#fb923c'};font-size:22px;font-weight:700;letter-spacing:1px">${isCN?'CREDIT NOTE':'DEBIT NOTE'}</div>
-        <div style="color:rgba(255,255,255,.7);font-size:10px;margin-top:6px">Company Reg No : ${CO.uen}</div>
-        <div style="color:rgba(255,255,255,.7);font-size:10px">GST Reg No : ${CO.gst}</div>
+        <div style="color:rgba(255,255,255,.7);font-size:10px;margin-top:6px">Company Reg No : ${esc(CO.uen)}</div>
+        <div style="color:rgba(255,255,255,.7);font-size:10px">GST Reg No : ${esc(CO.gst)}</div>
       </div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr auto;gap:0;border-bottom:1px solid #ddd">
       <div style="padding:14px 24px;border-right:1px solid #ddd">
         <table style="font-size:12px;border-collapse:collapse;width:100%">
-          <tr><td style="color:#555;padding:2px 0;width:70px;white-space:nowrap;text-align:right">${isC?'To':'Supplier'} :</td><td style="font-weight:700;padding:2px 0;padding-left:8px">${party?party.name:''}</td></tr>
-          ${party&&party.addr?`<tr><td></td><td style="padding:2px 0;padding-left:8px;color:#333;white-space:pre-line">${party.addr}</td></tr>`:''}
-          <tr><td style="color:#555;padding:2px 0;padding-top:6px;text-align:right;white-space:nowrap">Attn :</td><td style="padding:2px 0;padding-top:6px;padding-left:8px;font-weight:600">${FORM.attn||''}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;width:70px;white-space:nowrap;text-align:right">${isC?'To':'Supplier'} :</td><td style="font-weight:700;padding:2px 0;padding-left:8px">${esc(party?party.name:'')}</td></tr>
+          ${party&&party.addr?`<tr><td></td><td style="padding:2px 0;padding-left:8px;color:#333;white-space:pre-line">${esc(party.addr)}</td></tr>`:''}
+          <tr><td style="color:#555;padding:2px 0;padding-top:6px;text-align:right;white-space:nowrap">Attn :</td><td style="padding:2px 0;padding-top:6px;padding-left:8px;font-weight:600">${esc(FORM.attn||'')}</td></tr>
         </table>
       </div>
       <div style="padding:14px 24px;min-width:220px">
         <table style="font-size:12px;border-collapse:collapse;width:100%">
-          <tr><td style="color:#555;padding:2px 0;white-space:nowrap;width:105px;text-align:right">${isCN?'Credit':'Debit'} Note No :</td><td style="padding:2px 0;padding-left:10px;font-weight:700;color:${CO.brand}">${num}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;white-space:nowrap;width:105px;text-align:right">${isCN?'Credit':'Debit'} Note No :</td><td style="padding:2px 0;padding-left:10px;font-weight:700;color:${esc(CO.brand)}">${num}</td></tr>
           <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Date :</td><td style="padding:2px 0;padding-left:10px">${dateStr}</td></tr>
-          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Reference :</td><td style="padding:2px 0;padding-left:10px">${FORM.ref||'—'}</td></tr>
+          <tr><td style="color:#555;padding:2px 0;text-align:right;white-space:nowrap">Reference :</td><td style="padding:2px 0;padding-left:10px">${esc(FORM.ref||'—')}</td></tr>
         </table>
       </div>
     </div>
@@ -2005,30 +2005,30 @@ function renderCreditDebitPreview(isCN,cur,sub,gst,tot,party){
           ${LINE_ITEMS.map((l,i)=>`<tr>
             <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${i+1}</td>
             <td style="padding:7px 8px;border:1px solid #ddd;white-space:pre-line;overflow-wrap:anywhere;word-break:break-word;vertical-align:top;color:#1a1a1a">${escAttr(l.desc)||'—'}</td>
-            <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
-            <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${l.qty}</td>
-            <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${(l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+            <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc(l.unitPrice.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
+            <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc(l.qty)}</td>
+            <td style="padding:7px 8px;text-align:center;border:1px solid #ddd;vertical-align:top;color:#1a1a1a">${esc((l.qty*l.unitPrice).toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
           </tr>`).join('')}
           <tr>
             <td style="border:1px solid #ddd"></td>
-            <td style="border:1px solid #ddd;padding:6px 8px;color:#555;font-size:11px">${FORM.notes||''}</td>
+            <td style="border:1px solid #ddd;padding:6px 8px;color:#555;font-size:11px">${esc(FORM.notes||'')}</td>
             <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;font-weight:600;color:#1a1a1a;white-space:nowrap">Sub-Total (${cur})</td>
             <td style="border:1px solid #ddd"></td>
-            <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;font-weight:600">${sub.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+            <td style="border:1px solid #ddd;padding:6px 8px;text-align:center;font-weight:600">${esc(sub.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
           </tr>
           <tr>
             <td style="border:1px solid #ddd"></td>
             <td style="border:1px solid #ddd"></td>
             <td style="border:1px solid #ddd;padding:6px 8px;text-align:right;color:#333;white-space:nowrap">GST</td>
             <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${docGstOn()?docGstRate()+'%':'N/A'}</td>
-            <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${docGstOn()?gst.toLocaleString('en-SG',{minimumFractionDigits:2}):'—'}</td>
+            <td style="border:1px solid #ddd;padding:6px 8px;text-align:center">${esc(docGstOn()?gst.toLocaleString('en-SG',{minimumFractionDigits:2}):'—')}</td>
           </tr>
           <tr style="background:#f5f5f5">
             <td style="border:1px solid #ddd"></td>
             <td style="border:1px solid #ddd"></td>
             <td style="border:1px solid #ddd;padding:7px 8px;text-align:right;font-weight:700;white-space:nowrap">Total ${isCN?'Credit':'Debit'} (${cur})</td>
             <td style="border:1px solid #ddd"></td>
-            <td style="border:1px solid #ddd;padding:7px 8px;text-align:center;font-weight:700">${tot.toLocaleString('en-SG',{minimumFractionDigits:2})}</td>
+            <td style="border:1px solid #ddd;padding:7px 8px;text-align:center;font-weight:700">${esc(tot.toLocaleString('en-SG',{minimumFractionDigits:2}))}</td>
           </tr>
         </tbody>
       </table>
@@ -2047,45 +2047,45 @@ function renderSupDOPreview(party){
     <button class="btn" onclick="DOC_TAB='edit';render()">← Back</button>
     <button class="btn" onclick="printDoc('print')">🖨 Print</button><button class="btn btn-navy" onclick="printDoc('pdf')">⬇ Download PDF</button>${emailButton()}
   </div>
-  <div class="preview-doc" id="print-area" style="border-top:4px solid ${CO.brand}">
+  <div class="preview-doc" id="print-area" style="border-top:4px solid ${esc(CO.brand)}">
     <div class="prev-hdr">
       <div>
-        <div style="font-size:15px;font-weight:700;color:${CO.brand}">${CO.name}</div>
-        <div style="font-size:11px;color:#555;white-space:pre-line;margin-top:3px">${CO.addr}</div>
-        <div style="font-size:11px;color:#555">Tel: ${CO.tel} · ${CO.email}</div>
+        <div style="font-size:15px;font-weight:700;color:${esc(CO.brand)}">${esc(CO.name)}</div>
+        <div style="font-size:11px;color:#555;white-space:pre-line;margin-top:3px">${esc(CO.addr)}</div>
+        <div style="font-size:11px;color:#555">Tel: ${esc(CO.tel)} · ${esc(CO.email)}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:17px;font-weight:700;color:${CO.brand}">Goods Received Note</div>
+        <div style="font-size:17px;font-weight:700;color:${esc(CO.brand)}">Goods Received Note</div>
         <div style="font-size:12px;font-family:monospace;color:#666">${num}</div>
-        <div style="font-size:11px;color:#666;margin-top:3px">DO Date: ${FORM.date||today()}</div>
-        <div style="font-size:11px;font-weight:600;color:${CO.brand}">Received: ${FORM.receivedDate||today()}</div>
+        <div style="font-size:11px;color:#666;margin-top:3px">DO Date: ${esc(FORM.date||today())}</div>
+        <div style="font-size:11px;font-weight:600;color:${esc(CO.brand)}">Received: ${esc(FORM.receivedDate||today())}</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid ${CO.brand};font-size:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid ${esc(CO.brand)};font-size:12px">
       <div>
         <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">From (Supplier)</div>
-        <div style="font-weight:700;font-size:13px">${party?party.name:'—'}</div>
-        ${FORM.attn?`<div>Delivered by: ${FORM.attn}</div>`:''}
-        <div style="color:#555;white-space:pre-line">${party?party.addr||'':''}</div>
+        <div style="font-weight:700;font-size:13px">${esc(party?party.name:'—')}</div>
+        ${FORM.attn?`<div>Delivered by: ${esc(FORM.attn)}</div>`:''}
+        <div style="color:#555;white-space:pre-line">${esc(party?party.addr||'':'')}</div>
       </div>
       <div>
         <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">References &amp; receipt</div>
-        <div>Our PO ref: <strong>${FORM.ref||'—'}</strong></div>
-        <div>Purchase invoice: <strong>${FORM.sinvRef||'—'}</strong></div>
-        <div style="margin-top:6px">Received by: <strong>${FORM.receivedBy||'—'}</strong></div>
-        <div>Condition: <strong style="text-transform:capitalize">${FORM.status||'received'}</strong></div>
+        <div>Our PO ref: <strong>${esc(FORM.ref||'—')}</strong></div>
+        <div>Purchase invoice: <strong>${esc(FORM.sinvRef||'—')}</strong></div>
+        <div style="margin-top:6px">Received by: <strong>${esc(FORM.receivedBy||'—')}</strong></div>
+        <div>Condition: <strong style="text-transform:capitalize">${esc(FORM.status||'received')}</strong></div>
       </div>
     </div>
     <div style="margin-bottom:12px">
       <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Items received</div>
-      <div style="font-size:12px;white-space:pre-line;padding:10px 12px;background:#f9f9f9;border-radius:6px">${FORM.items||'—'}</div>
+      <div style="font-size:12px;white-space:pre-line;padding:10px 12px;background:#f9f9f9;border-radius:6px">${esc(FORM.items||'—')}</div>
     </div>
-    ${FORM.notes?`<div style="margin-bottom:12px"><div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Notes / discrepancies</div><div style="font-size:12px;padding:8px 12px;background:#fffbeb;border-radius:6px;color:#92400e">${FORM.notes}</div></div>`:''}
+    ${FORM.notes?`<div style="margin-bottom:12px"><div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Notes / discrepancies</div><div style="font-size:12px;padding:8px 12px;background:#fffbeb;border-radius:6px;color:#92400e">${esc(FORM.notes)}</div></div>`:''}
     <div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:30px;padding-top:14px;border-top:1px solid #eee">
-      <div style="font-size:11px;color:#555">Received by:<br><br><div style="border-bottom:1px solid #ccc;margin-top:24px;padding-bottom:2px">${FORM.receivedBy||'___________________________'}</div><div style="font-size:10px;color:#888;margin-top:4px">Name &amp; signature · Date: ${FORM.receivedDate||today()}</div></div>
+      <div style="font-size:11px;color:#555">Received by:<br><br><div style="border-bottom:1px solid #ccc;margin-top:24px;padding-bottom:2px">${esc(FORM.receivedBy||'___________________________')}</div><div style="font-size:10px;color:#888;margin-top:4px">Name &amp; signature · Date: ${esc(FORM.receivedDate||today())}</div></div>
       <div style="font-size:11px;color:#555">Verified by:<br><br><div style="border-bottom:1px solid #ccc;margin-top:24px;padding-bottom:2px">___________________________</div><div style="font-size:10px;color:#888;margin-top:4px">Name &amp; signature · Date: ____________</div></div>
     </div>
-    <div style="margin-top:14px;padding-top:10px;border-top:1px solid #eee;font-size:11px;color:#888">Internal record — ${CO.name} · ${CO.email}</div>
+    <div style="margin-top:14px;padding-top:10px;border-top:1px solid #eee;font-size:11px;color:#888">Internal record — ${esc(CO.name)} · ${esc(CO.email)}</div>
   </div>`;
 }
 

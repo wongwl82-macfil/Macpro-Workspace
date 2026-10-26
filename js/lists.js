@@ -18,23 +18,23 @@ function renderDash(){
   const activeC=DB.clients.filter(c=>c.status==='active').length;
   return `
   <div class="stats">
-    <div class="stat"><div class="stat-label">Outstanding Sales Orders</div><div class="stat-val" style="font-size:18px">${fmt(DB.clientPOs.filter(soAwaitingInvoice).reduce((s,d)=>s+toBase(d.amount||0,d.currency),0),CO.fxRates?.base||'SGD')}</div><div class="stat-sub">${DB.clientPOs.filter(soAwaitingInvoice).length} of ${DB.clientPOs.length} pending · ${CO.fxRates?.base||'SGD'} equiv.</div></div>
+    <div class="stat"><div class="stat-label">Outstanding Sales Orders</div><div class="stat-val" style="font-size:18px">${esc(fmt(DB.clientPOs.filter(soAwaitingInvoice).reduce((s,d)=>s+toBase(d.amount||0,d.currency),0),CO.fxRates?.base||'SGD'))}</div><div class="stat-sub">${esc(DB.clientPOs.filter(soAwaitingInvoice).length)} of ${esc(DB.clientPOs.length)} pending · ${esc(CO.fxRates?.base||'SGD')} equiv.</div></div>
     <div class="stat"><div class="stat-label">Invoiced (This Month)</div>
     ${(()=>{
       const now=new Date();
       const yyyymm=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
       const monthInv=DB.invoices.filter(d=>isIssued(d)&&(d.date||'').startsWith(yyyymm));
       const total=monthInv.reduce((s,d)=>s+toBase(d.amount||0,d.currency),0);
-      return `<div class="stat-val" style="font-size:18px">${fmt(total,CO.fxRates?.base||'SGD')}</div><div class="stat-sub">${monthInv.length} invoices · ${CO.fxRates?.base||'SGD'} equiv.</div>`;
+      return `<div class="stat-val" style="font-size:18px">${esc(fmt(total,CO.fxRates?.base||'SGD'))}</div><div class="stat-sub">${esc(monthInv.length)} invoices · ${esc(CO.fxRates?.base||'SGD')} equiv.</div>`;
     })()}</div>
-    <div class="stat"><div class="stat-label">Quotations (This Month)</div><div class="stat-val" style="font-size:18px">${fmt(sumBase(monthQTs),base)}</div><div class="stat-sub">${monthQTs.length} this month · ${openQTs.length} open (${fmt(sumBase(openQTs),base)}) · ${base} equiv.</div></div>
-    <div class="stat red"><div class="stat-label">Overdue Invoices</div><div class="stat-val" style="font-size:18px;color:var(--danger)">${fmt(sumBase(ovInvs),base)}</div><div class="stat-sub">${ovInvs.length} invoice${ovInvs.length===1?'':'s'} need follow-up · ${base} equiv.</div></div>
-    <div class="stat"><div class="stat-label">FX Rates (vs ${CO.fxRates?.base||'SGD'})</div>
+    <div class="stat"><div class="stat-label">Quotations (This Month)</div><div class="stat-val" style="font-size:18px">${esc(fmt(sumBase(monthQTs),base))}</div><div class="stat-sub">${esc(monthQTs.length)} this month · ${esc(openQTs.length)} open (${esc(fmt(sumBase(openQTs),base))}) · ${base} equiv.</div></div>
+    <div class="stat red"><div class="stat-label">Overdue Invoices</div><div class="stat-val" style="font-size:18px;color:var(--danger)">${esc(fmt(sumBase(ovInvs),base))}</div><div class="stat-sub">${esc(ovInvs.length)} invoice${ovInvs.length===1?'':'s'} need follow-up · ${base} equiv.</div></div>
+    <div class="stat"><div class="stat-label">FX Rates (vs ${esc(CO.fxRates?.base||'SGD')})</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
         ${(CO.fxRates?.rates||[]).filter(r=>r.rate).map(r=>`
           <div style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;text-align:center">
-            <span style="font-weight:700;color:var(--navy)">${r.currency}</span>
-            <span style="color:var(--muted)"> = ${r.rate}</span>
+            <span style="font-weight:700;color:var(--navy)">${esc(r.currency)}</span>
+            <span style="color:var(--muted)"> = ${esc(r.rate)}</span>
           </div>`).join('') || '<span style="font-size:12px;color:var(--muted)">No rates set — <button class="alink" onclick="nav(\'settings\');S_TAB=\'currency\';render()">set now</button></span>'}
       </div>
       <div class="stat-sub" style="margin-top:6px">Updated: ${(CO.fxRates?.rates||[]).filter(r=>r.rate).map(r=>r.updatedAt).sort().pop()||'—'}</div>
@@ -45,16 +45,16 @@ function renderDash(){
   <div class="tbl-wrap"><table class="dash-tbl">
     <thead><tr><th>QT No.</th><th>Client Ref</th><th>Client</th><th>Date</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
     <tbody>${DB.quotations.map(d=>`<tr>
-      <td class="mono">${d.id}</td>
-      <td class="mono">${d.ref||'—'}</td>
-      <td>${cName(d.clientId)}</td><td>${d.date}</td>
-      <td>${fmt(d.amount,d.currency)}</td><td><span class="badge b-${d.status}">${d.status}</span></td>
+      <td class="mono">${esc(d.id)}</td>
+      <td class="mono">${esc(d.ref||'—')}</td>
+      <td>${esc(cName(d.clientId))}</td><td>${esc(d.date)}</td>
+      <td>${esc(fmt(d.amount,d.currency))}</td><td><span class="badge b-${esc(d.status)}">${esc(d.status)}</span></td>
       <td class="dash-acts">
-        <button class="alink" onclick="openDocForm('quotation','${d.id}')">Edit</button>
+        <button class="alink" onclick="openDocForm('quotation','${esc(d.id)}')">Edit</button>
         ${d.status==='converted'?'':`
-        <button class="alink" onclick="fromQTtoSO('${d.id}')"      style="color:var(--warning)">→ SO</button>
-        <button class="alink" onclick="fromQTtoInvoice('${d.id}')" style="color:var(--success)">→ Invoice</button>
-        <button class="alink" onclick="fromQTtoDO('${d.id}')" style="color:var(--purple-tx)">→ DO</button>`}
+        <button class="alink" onclick="fromQTtoSO('${esc(d.id)}')"      style="color:var(--warning)">→ SO</button>
+        <button class="alink" onclick="fromQTtoInvoice('${esc(d.id)}')" style="color:var(--success)">→ Invoice</button>
+        <button class="alink" onclick="fromQTtoDO('${esc(d.id)}')" style="color:var(--purple-tx)">→ DO</button>`}
       </td>
     </tr>`).join('')}</tbody>
   </table></div>
@@ -62,15 +62,15 @@ function renderDash(){
   <div class="tbl-wrap"><table class="dash-tbl">
     <thead><tr><th>SO No.</th><th>Client Ref</th><th>Client</th><th>Date</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
     <tbody>${DB.clientPOs.map(d=>`<tr>
-      <td class="mono">${d.id}</td>
-      <td class="mono">${d.ref||'—'}</td>
-      <td>${cName(d.clientId)}</td><td>${d.date}</td>
-      <td>${fmt(d.amount,d.currency)}</td>
-      <td><span class="badge b-${d.status||'outstanding'}">${d.status||'outstanding'}</span></td>
+      <td class="mono">${esc(d.id)}</td>
+      <td class="mono">${esc(d.ref||'—')}</td>
+      <td>${esc(cName(d.clientId))}</td><td>${esc(d.date)}</td>
+      <td>${esc(fmt(d.amount,d.currency))}</td>
+      <td><span class="badge b-${esc(d.status||'outstanding')}">${esc(d.status||'outstanding')}</span></td>
       <td class="dash-acts">
-        <button class="alink" onclick="openDocForm('client-po','${d.id}')">Edit</button>
-        <button class="alink" onclick="fromCPOInv('${d.id}')" style="color:var(--success)">→ Invoice</button>
-        <button class="alink" onclick="fromCPOtoDO('${d.id}')" style="color:var(--purple-tx)">→ DO</button>
+        <button class="alink" onclick="openDocForm('client-po','${esc(d.id)}')">Edit</button>
+        <button class="alink" onclick="fromCPOInv('${esc(d.id)}')" style="color:var(--success)">→ Invoice</button>
+        <button class="alink" onclick="fromCPOtoDO('${esc(d.id)}')" style="color:var(--purple-tx)">→ DO</button>
       </td>
     </tr>`).join('')}
     </tbody>
@@ -79,14 +79,14 @@ function renderDash(){
   <div class="tbl-wrap"><table class="dash-tbl dash-tbl-do">
     <thead><tr><th>Invoice No.</th><th>Client Ref</th><th>Client</th><th>Due Date</th><th>Amount</th><th>Status</th><th>DO No.</th><th>Action</th></tr></thead>
     <tbody>${DB.invoices.map(d=>`<tr>
-      <td class="mono">${d.id}</td>
-      <td class="mono">${d.ref||'—'}</td>
-      <td>${cName(d.clientId)}</td><td>${d.due}</td>
-      <td>${fmt(d.amount,d.currency)}</td><td><span class="badge b-${d.status}">${d.status}</span></td>
-      <td class="mono">${d.linkedDoId||'—'}</td>
+      <td class="mono">${esc(d.id)}</td>
+      <td class="mono">${esc(d.ref||'—')}</td>
+      <td>${esc(cName(d.clientId))}</td><td>${esc(d.due)}</td>
+      <td>${esc(fmt(d.amount,d.currency))}</td><td><span class="badge b-${esc(d.status)}">${esc(d.status)}</span></td>
+      <td class="mono">${esc(d.linkedDoId||'—')}</td>
       <td class="dash-acts">
-        <button class="alink" onclick="openDocForm('invoice','${d.id}')">Edit</button>
-        <button class="alink" onclick="fromINVtoDO('${d.id}')" style="color:var(--purple-tx)">→ DO</button>
+        <button class="alink" onclick="openDocForm('invoice','${esc(d.id)}')">Edit</button>
+        <button class="alink" onclick="fromINVtoDO('${esc(d.id)}')" style="color:var(--purple-tx)">→ DO</button>
       </td>
     </tr>`).join('')}</tbody>
   </table></div>`;
@@ -101,47 +101,47 @@ function renderFollowUps(){
     {title:'Quotes waiting 7+ days for a reply', page:'quotation',
      rows:DB.quotations.filter(q=>['draft','sent'].includes(q.status)&&(q.date||t)<=ago7),
      line:q=>`${cName(q.clientId)} · ${fmt(q.amount,q.currency)} · ${q.date}`,
-     acts:q=>`<button class="alink" onclick="fromQTtoSO('${q.id}')" style="color:var(--warning)">→ SO</button>`},
+     acts:q=>`<button class="alink" onclick="fromQTtoSO('${esc(q.id)}')" style="color:var(--warning)">→ SO</button>`},
     {title:'Draft invoices / notes not issued yet', page:'invoice',
      rows:[...DB.invoices,...DB.creditNotes,...DB.debitNotes].filter(d=>d.status==='draft'),
      line:d=>`${d.partyType==='supplier'?sName(d.supplierId):cName(d.clientId)} · ${fmt(d.amount,d.currency)} · ${d.date||''}`,
      openJs:d=>`openDocForm('${DB.invoices.includes(d)?'invoice':DB.creditNotes.includes(d)?'credit-note':'debit-note'}','${d.id}')`,
-     acts:d=>`<button class="alink" onclick="openDocForm('${DB.invoices.includes(d)?'invoice':DB.creditNotes.includes(d)?'credit-note':'debit-note'}','${d.id}')">Open</button>`},
+     acts:d=>`<button class="alink" onclick="openDocForm('${DB.invoices.includes(d)?'invoice':DB.creditNotes.includes(d)?'credit-note':'debit-note'}','${esc(d.id)}')">Open</button>`},
     {title:'Invoices due in the next 7 days', page:'invoice',
      rows:DB.invoices.filter(i=>['pending','sent','issued'].includes(i.status)&&i.due>=t&&i.due<=in7),
      line:i=>`${cName(i.clientId)} · ${fmt(i.amount,i.currency)} · due ${i.due}`,
-     acts:i=>`<button class="alink" onclick="markInvoicePaid('${i.id}')" style="color:var(--success-tx)">✓ Paid</button>`},
+     acts:i=>`<button class="alink" onclick="markInvoicePaid('${esc(i.id)}')" style="color:var(--success-tx)">✓ Paid</button>`},
     {title:'Sales orders not delivered yet', page:'client-po',
      rows:DB.clientPOs.filter(s=>!s.status||s.status==='outstanding'),
      line:s=>`${cName(s.clientId)} · ${fmt(s.amount,s.currency)} · ${s.date}`,
-     acts:s=>`<button class="alink" onclick="fromCPOtoDO('${s.id}')" style="color:var(--purple-tx)">→ DO</button>`},
+     acts:s=>`<button class="alink" onclick="fromCPOtoDO('${esc(s.id)}')" style="color:var(--purple-tx)">→ DO</button>`},
     {title:'Delivered, not invoiced', page:'client-po',
      rows:DB.clientPOs.filter(s=>s.status==='delivered'),
      line:s=>`${cName(s.clientId)} · ${fmt(s.amount,s.currency)} · DO ${s.linkedDoId}`,
-     acts:s=>`<button class="alink" onclick="fromCPOInv('${s.id}')" style="color:var(--success)">→ Invoice</button>`},
+     acts:s=>`<button class="alink" onclick="fromCPOInv('${esc(s.id)}')" style="color:var(--success)">→ Invoice</button>`},
     {title:'POs awaiting goods', page:'po',
      rows:DB.pos.filter(p=>['pending','sent','invoiced'].includes(p.status)),
      line:p=>`${sName(p.supplierId)} · ${fmt(p.amount,p.currency)} · ${p.date}`,
-     acts:p=>`<button class="alink" onclick="fromPOtoSupDO('${p.id}')" style="color:var(--purple-tx)">→ Goods received</button>`},
+     acts:p=>`<button class="alink" onclick="fromPOtoSupDO('${esc(p.id)}')" style="color:var(--purple-tx)">→ Goods received</button>`},
     {title:'Goods received, no supplier invoice', page:'po',
      rows:DB.pos.filter(p=>['received','partial'].includes(p.status)&&!posWithInv.has(p.id)),
      line:p=>`${sName(p.supplierId)} · ${fmt(p.amount,p.currency)}`,
-     acts:p=>`<button class="alink" onclick="fromPOtoSupInv('${p.id}')" style="color:var(--success)">→ Purchase invoice</button>`},
+     acts:p=>`<button class="alink" onclick="fromPOtoSupInv('${esc(p.id)}')" style="color:var(--success)">→ Purchase invoice</button>`},
   ].filter(g=>g.rows.length);
   if(!groups.length) return '';
   return `<div class="sec-hdr"><h3>Needs attention</h3></div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:18px">
     ${groups.map(g=>`<div class="panel" style="margin:0;padding:14px 16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;font-weight:700">${g.title}</span>
-        <span class="badge b-pending">${g.rows.length}</span>
+        <span style="font-size:12px;font-weight:700">${esc(g.title)}</span>
+        <span class="badge b-pending">${esc(g.rows.length)}</span>
       </div>
       ${g.rows.slice(0,5).map(d=>`<div style="display:flex;gap:8px;align-items:center;padding:5px 0;border-top:1px solid var(--border);font-size:12px">
-        <span class="mono" style="cursor:pointer;color:var(--accent-tx)" onclick="${g.openJs?g.openJs(d):`openDocForm('${g.page}','${d.id}')`}">${d.id}</span>
-        <span style="flex:1;min-width:0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${g.line(d)}</span>
+        <span class="mono" style="cursor:pointer;color:var(--accent-tx)" onclick="${g.openJs?g.openJs(d):`openDocForm('${esc(g.page)}','${esc(d.id)}')`}">${esc(d.id)}</span>
+        <span style="flex:1;min-width:0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.line(d))}</span>
         ${g.acts(d)}
       </div>`).join('')}
-      ${g.rows.length>5?`<button class="alink" style="margin-top:6px;font-size:12px" onclick="nav('${g.page}')">+${g.rows.length-5} more →</button>`:''}
+      ${g.rows.length>5?`<button class="alink" style="margin-top:6px;font-size:12px" onclick="nav('${esc(g.page)}')">+${g.rows.length-5} more →</button>`:''}
     </div>`).join('')}
   </div>`;
 }
@@ -149,7 +149,7 @@ function renderFollowUps(){
 /* ═══════════════════════════════════════════════
    CONTACTS
 ═══════════════════════════════════════════════ */
-const escAttr=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const escAttr=esc;  // older name, same helper (js/core.js)
 // A multi-line description squeezed onto one line, for item summaries in lists
 const oneLine=s=>String(s??'').replace(/\s*\n+\s*/g,' ').trim();
 // Does any of these fields contain the search text?
@@ -208,45 +208,45 @@ function contactResults(type){
   const q=SEARCH[type].trim().toLowerCase();
   const fl=sortList(list.filter(x=>matches(q,x.name,x.contact,x.email,x.tel,x.id,isC?x.industry:x.category)),type);
   const e=escAttr;
-  const acts=x=>(isC?`<button class="alink" onclick="event.stopPropagation();fromClient('${x.id}')">New QT</button>
-      <button class="alink" onclick="event.stopPropagation();openSOAFromClient('${x.id}')">SOA</button>`
-    :`<button class="alink" onclick="event.stopPropagation();fromSupplier('${x.id}')">New PO</button>`)
-    +`<button class="alink" onclick="event.stopPropagation();openModal('${kind}','${x.id}')">Edit</button>`;
+  const acts=x=>(isC?`<button class="alink" onclick="event.stopPropagation();fromClient('${esc(x.id)}')">New QT</button>
+      <button class="alink" onclick="event.stopPropagation();openSOAFromClient('${esc(x.id)}')">SOA</button>`
+    :`<button class="alink" onclick="event.stopPropagation();fromSupplier('${esc(x.id)}')">New PO</button>`)
+    +`<button class="alink" onclick="event.stopPropagation();openModal('${kind}','${esc(x.id)}')">Edit</button>`;
   if(fl.length===0) return `<div class="empty">No ${type} found${q?` for "${e(SEARCH[type])}"`:''}.</div>`;
-  const count=`<div class="field-hint" style="margin-bottom:8px">${fl.length} ${fl.length===1?kind:type}${q?' found':''}</div>`;
+  const count=`<div class="field-hint" style="margin-bottom:8px">${esc(fl.length)} ${fl.length===1?kind:type}${q?' found':''}</div>`;
   if(viewOf(type)==='table') return count+`<div class="tbl-wrap" style="overflow-x:auto"><table class="vtbl">
     <thead><tr><th>Name</th>${isC?'<th>Industry</th>':'<th>Category</th>'}<th>Contact</th><th>Email</th><th>Tel</th><th>Country</th>${isC?'':'<th>Currency</th>'}<th>Terms</th><th>Status</th><th></th></tr></thead>
-    <tbody>${fl.map(x=>`<tr onclick="openModal('${kind}','${x.id}')">
+    <tbody>${fl.map(x=>`<tr onclick="openModal('${kind}','${esc(x.id)}')">
       <td style="font-weight:600">${e(x.name)}</td><td>${e(isC?x.industry:x.category)||'—'}</td>
       <td>${e(x.contact)||'—'}</td><td>${e(x.email)||'—'}</td><td>${e(x.tel)||'—'}</td><td>${e(x.country)||'—'}</td>
       ${isC?'':`<td>${e(x.currency)||'—'}</td>`}<td>${e(x.terms)||'—'}</td>
-      <td><div style="display:flex;gap:4px"><span class="badge b-${x.status}">${x.status||'—'}</span>${alsoTag(kind,x)}</div></td>
+      <td><div style="display:flex;gap:4px"><span class="badge b-${esc(x.status)}">${esc(x.status||'—')}</span>${alsoTag(kind,x)}</div></td>
       <td><div style="display:flex;gap:10px">${acts(x)}</div></td>
     </tr>`).join('')}</tbody></table></div>`;
   if(viewOf(type)==='list') return count+`<div class="clist">${fl.map(x=>`
-    <div class="clist-row" onclick="openModal('${kind}','${x.id}')">
-      <div class="av ${isC?'av-c':'av-s'}">${inits(x.name||'?')}</div>
+    <div class="clist-row" onclick="openModal('${kind}','${esc(x.id)}')">
+      <div class="av ${isC?'av-c':'av-s'}">${esc(inits(x.name||'?'))}</div>
       <div class="clist-main"><div class="clist-name">${e(x.name)}</div>
         <div class="clist-sub">${[x.contact,x.email,x.tel,x.country].filter(Boolean).map(e).join(' · ')||'—'}</div></div>
-      ${alsoTag(kind,x)}<span class="badge b-${x.status}">${x.status||''}</span>
+      ${alsoTag(kind,x)}<span class="badge b-${esc(x.status)}">${esc(x.status||'')}</span>
       <div class="clist-acts">${acts(x)}</div>
     </div>`).join('')}</div>`;
   return count+`
   <div class="contact-grid">${fl.map(x=>`
-    <div class="contact-card" onclick="openModal('${isC?'client':'supplier'}','${x.id}')">
+    <div class="contact-card" onclick="openModal('${isC?'client':'supplier'}','${esc(x.id)}')">
       <div class="cc-hdr">
-        <div class="av ${isC?'av-c':'av-s'}">${inits(x.name)}</div>
-        <div style="flex:1;min-width:0"><div class="cc-name">${x.name}</div><div class="cc-role">${(isC?x.industry:x.category)||''}</div></div>
-        <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end"><span class="badge b-${x.status}">${x.status}</span>${alsoTag(kind,x)}</div>
+        <div class="av ${isC?'av-c':'av-s'}">${esc(inits(x.name))}</div>
+        <div style="flex:1;min-width:0"><div class="cc-name">${esc(x.name)}</div><div class="cc-role">${esc((isC?x.industry:x.category)||'')}</div></div>
+        <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end"><span class="badge b-${esc(x.status)}">${esc(x.status)}</span>${alsoTag(kind,x)}</div>
       </div>
-      <div class="cc-det">${x.contact||'—'}</div>
-      <div class="cc-det">${x.email||'—'}</div>
-      <div class="cc-det">${x.tel||'—'}${x.country?' · '+x.country:''}</div>
+      <div class="cc-det">${esc(x.contact||'—')}</div>
+      <div class="cc-det">${esc(x.email||'—')}</div>
+      <div class="cc-det">${esc(x.tel||'—')}${esc(x.country?' · '+x.country:'')}</div>
       <div class="cc-foot">
-        ${isC?`<button class="btn btn-sm" onclick="event.stopPropagation();fromClient('${x.id}')">New QT</button>
-               <button class="btn btn-sm" onclick="event.stopPropagation();openSOAFromClient('${x.id}')">SOA</button>`
-             :`<button class="btn btn-sm" onclick="event.stopPropagation();fromSupplier('${x.id}')">New PO</button>`}
-        <button class="btn btn-sm" onclick="event.stopPropagation();openModal('${isC?'client':'supplier'}','${x.id}')">Edit</button>
+        ${isC?`<button class="btn btn-sm" onclick="event.stopPropagation();fromClient('${esc(x.id)}')">New QT</button>
+               <button class="btn btn-sm" onclick="event.stopPropagation();openSOAFromClient('${esc(x.id)}')">SOA</button>`
+             :`<button class="btn btn-sm" onclick="event.stopPropagation();fromSupplier('${esc(x.id)}')">New PO</button>`}
+        <button class="btn btn-sm" onclick="event.stopPropagation();openModal('${isC?'client':'supplier'}','${esc(x.id)}')">Edit</button>
       </div>
     </div>`).join('')}
   </div>`;
@@ -262,7 +262,7 @@ function renderProducts(){
     <input id="search-box" placeholder="Search by name, code, or category…" value="${escAttr(SEARCH.products)}" oninput="onSearch('products',this.value)" autocomplete="off"/>
     <select onchange="SEARCH.products=this.value;render()" style="padding:8px 10px;border:1px solid var(--border-str);border-radius:var(--radius);background:var(--input);color:var(--text);font-size:13px">
       <option value="">All categories</option>
-      ${cats.map(c=>`<option value="${escAttr(c)}" ${SEARCH.products===c?'selected':''}>${c}</option>`).join('')}
+      ${cats.map(c=>`<option value="${escAttr(c)}" ${SEARCH.products===c?'selected':''}>${esc(c)}</option>`).join('')}
     </select>
     ${viewBar('products')}
   </div>
@@ -273,45 +273,45 @@ function productResults(){
   const fl=sortList(DB.products.filter(p=>matches(q,p.name,p.code,p.category,p.notes)),'products');
   const e=escAttr;
   if(fl.length===0) return `<div class="empty">No products found.</div>`;
-  const count=`<div class="field-hint" style="margin-bottom:8px">${fl.length} product${fl.length===1?'':'s'}${q?' found':''}</div>`;
-  const acts=p=>`<button class="alink" onclick="event.stopPropagation();openModal('product','${p.id}')">Edit</button>
-    <button class="alink" onclick="event.stopPropagation();delProduct('${p.id}')">Delete</button>`;
+  const count=`<div class="field-hint" style="margin-bottom:8px">${esc(fl.length)} product${fl.length===1?'':'s'}${q?' found':''}</div>`;
+  const acts=p=>`<button class="alink" onclick="event.stopPropagation();openModal('product','${esc(p.id)}')">Edit</button>
+    <button class="alink" onclick="event.stopPropagation();delProduct('${esc(p.id)}')">Delete</button>`;
   if(viewOf('products')==='table') return count+`<div class="tbl-wrap" style="overflow-x:auto">
     <table class="vtbl"><thead><tr><th>Code</th><th>Product name</th><th>Category</th><th>Unit</th><th style="text-align:right">Unit price</th><th>Supplier</th><th>Status</th><th></th></tr></thead>
-    <tbody>${fl.map(p=>`<tr onclick="openModal('product','${p.id}')">
+    <tbody>${fl.map(p=>`<tr onclick="openModal('product','${esc(p.id)}')">
       <td class="mono">${e(p.code)}</td>
       <td style="font-weight:500">${e(p.name)}</td>
       <td>${e(p.category)||'—'}</td>
       <td>${e(p.unit)||'—'}</td>
-      <td style="font-weight:600;text-align:right">${fmt(p.unitPrice,p.currency)}</td>
+      <td style="font-weight:600;text-align:right">${esc(fmt(p.unitPrice,p.currency))}</td>
       <td style="color:var(--muted);font-size:12px">${p.supplierId?e(sName(p.supplierId)):'—'}</td>
-      <td><span class="badge b-${p.status}">${p.status||'—'}</span></td>
+      <td><span class="badge b-${esc(p.status)}">${esc(p.status||'—')}</span></td>
       <td><div style="display:flex;gap:10px">${acts(p)}</div></td>
     </tr>`).join('')}</tbody>
     </table>
   </div>`;
   if(viewOf('products')==='list') return count+`<div class="clist">${fl.map(p=>`
-    <div class="clist-row" onclick="openModal('product','${p.id}')">
+    <div class="clist-row" onclick="openModal('product','${esc(p.id)}')">
       <span class="prod-code" style="margin:0;flex-shrink:0">${e(p.code)}</span>
       <div class="clist-main"><div class="clist-name">${e(p.name)}</div>
         <div class="clist-sub">${[p.category,p.unit,p.supplierId?sName(p.supplierId):''].filter(Boolean).map(e).join(' · ')||'—'}</div></div>
-      <span style="font-weight:700;font-size:13px;white-space:nowrap">${fmt(p.unitPrice,p.currency)}</span>
-      <span class="badge b-${p.status}">${p.status||''}</span>
+      <span style="font-weight:700;font-size:13px;white-space:nowrap">${esc(fmt(p.unitPrice,p.currency))}</span>
+      <span class="badge b-${esc(p.status)}">${esc(p.status||'')}</span>
       <div class="clist-acts">${acts(p)}</div>
     </div>`).join('')}</div>`;
   return count+`
   <div class="prod-grid">${fl.map(p=>`
-    <div class="prod-card" onclick="openModal('product','${p.id}')">
-      <div class="prod-code">${p.code}</div>
-      <div class="prod-name">${p.name}</div>
-      <div class="prod-cat">${p.category||'—'} · ${p.unit||''}</div>
-      <div class="prod-price">${fmt(p.unitPrice, p.currency)}</div>
-      ${p.supplierId?`<div style="font-size:11px;color:var(--muted);margin-top:4px">Supplier: ${sName(p.supplierId)}</div>`:''}
-      ${p.notes?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${p.notes}</div>`:''}
+    <div class="prod-card" onclick="openModal('product','${esc(p.id)}')">
+      <div class="prod-code">${esc(p.code)}</div>
+      <div class="prod-name">${esc(p.name)}</div>
+      <div class="prod-cat">${esc(p.category||'—')} · ${esc(p.unit||'')}</div>
+      <div class="prod-price">${esc(fmt(p.unitPrice, p.currency))}</div>
+      ${p.supplierId?`<div style="font-size:11px;color:var(--muted);margin-top:4px">Supplier: ${esc(sName(p.supplierId))}</div>`:''}
+      ${p.notes?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(p.notes)}</div>`:''}
       <div class="prod-foot">
-        <span class="badge b-${p.status}">${p.status}</span>
-        <button class="btn btn-sm btn-purple" onclick="event.stopPropagation();openModal('product','${p.id}')" style="margin-left:auto">Edit</button>
-        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();delProduct('${p.id}')">Delete</button>
+        <span class="badge b-${esc(p.status)}">${esc(p.status)}</span>
+        <button class="btn btn-sm btn-purple" onclick="event.stopPropagation();openModal('product','${esc(p.id)}')" style="margin-left:auto">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();delProduct('${esc(p.id)}')">Delete</button>
       </div>
     </div>`).join('')}
   </div>`;
@@ -344,17 +344,17 @@ function renderModal(){
       <h3>${isNew?'Add':'Edit'} ${isC?'Client':'Supplier'}</h3>
       <button class="modal-close" onclick="MODAL=null;render()">×</button>
     </div>
-    <div class="frow c2"><div class="fgrp"><label>Company name *</label><input id="m-name" value="${v('name')}"/></div><div class="fgrp"><label>Contact person</label><input id="m-contact" value="${v('contact')}"/></div></div>
-    <div class="frow c2"><div class="fgrp"><label>Email</label><input id="m-email" type="email" value="${v('email')}"/></div><div class="fgrp"><label>Phone</label><input id="m-tel" value="${v('tel')}"/></div></div>
-    <div class="frow"><div class="fgrp"><label>Address</label><textarea id="m-addr">${v('addr')}</textarea></div></div>
+    <div class="frow c2"><div class="fgrp"><label>Company name *</label><input id="m-name" value="${esc(v('name'))}"/></div><div class="fgrp"><label>Contact person</label><input id="m-contact" value="${esc(v('contact'))}"/></div></div>
+    <div class="frow c2"><div class="fgrp"><label>Email</label><input id="m-email" type="email" value="${esc(v('email'))}"/></div><div class="fgrp"><label>Phone</label><input id="m-tel" value="${esc(v('tel'))}"/></div></div>
+    <div class="frow"><div class="fgrp"><label>Address</label><textarea id="m-addr">${esc(v('addr'))}</textarea></div></div>
     <div class="frow c2">
-      <div class="fgrp"><label>Country</label><input id="m-country" value="${v('country','Singapore')}"/></div>
-      ${isC?`<div class="fgrp"><label>Industry</label><input id="m-ind" value="${v('industry')}"/></div>`
-           :`<div class="fgrp"><label>Category</label><input id="m-cat" value="${v('category')}"/></div>`}
+      <div class="fgrp"><label>Country</label><input id="m-country" value="${esc(v('country','Singapore'))}"/></div>
+      ${isC?`<div class="fgrp"><label>Industry</label><input id="m-ind" value="${esc(v('industry'))}"/></div>`
+           :`<div class="fgrp"><label>Category</label><input id="m-cat" value="${esc(v('category'))}"/></div>`}
     </div>
     <div class="frow c2">
       <div class="fgrp"><label>${isC?'GST Reg No.':'Currency'}</label>
-        ${isC?`<input id="m-gst" value="${v('gst')}"/>`:`<select id="m-cur">${[...new Set(['MYR','SGD','USD','EUR','GBP','AUD','JPY','CNY',v('currency','MYR')])].map(c=>`<option ${v('currency','MYR')===c?'selected':''}>${c}</option>`).join('')}</select>`}
+        ${isC?`<input id="m-gst" value="${esc(v('gst'))}"/>`:`<select id="m-cur">${[...new Set(['MYR','SGD','USD','EUR','GBP','AUD','JPY','CNY',v('currency','MYR')])].map(c=>`<option ${v('currency','MYR')===c?'selected':''}>${c}</option>`).join('')}</select>`}
       </div>
       <div class="fgrp"><label>Payment terms</label>
         <select id="m-terms">${termsOptions(v('terms'))}</select>
@@ -363,8 +363,8 @@ function renderModal(){
     <div class="frow c2"><div class="fgrp"><label>Status</label>
       <select id="m-status"><option ${v('status','active')==='active'?'selected':''}>active</option><option ${v('status')==='inactive'?'selected':''}>inactive</option></select>
     </div></div>
-    <div class="frow"><div class="fgrp"><label>Notes</label><textarea id="m-notes">${v('notes')}</textarea></div></div>
-    ${!isNew&&linkedParty(type,rec)?`<div class="field-hint" style="margin-bottom:8px">⇄ Also a ${isC?'supplier':'client'}: <button class="alink" onclick="openModal('${isC?'supplier':'client'}','${linkedParty(type,rec).id}')">${escAttr(linkedParty(type,rec).name)} (${linkedParty(type,rec).id})</button></div>`:''}
+    <div class="frow"><div class="fgrp"><label>Notes</label><textarea id="m-notes">${esc(v('notes'))}</textarea></div></div>
+    ${!isNew&&linkedParty(type,rec)?`<div class="field-hint" style="margin-bottom:8px">⇄ Also a ${isC?'supplier':'client'}: <button class="alink" onclick="openModal('${isC?'supplier':'client'}','${esc(linkedParty(type,rec).id)}')">${escAttr(linkedParty(type,rec).name)} (${esc(linkedParty(type,rec).id)})</button></div>`:''}
     ${isNew?'':auditLine(rec)}
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px;flex-wrap:wrap">
       ${!isNew?`<button class="btn btn-danger btn-sm" onclick="delContact('${type}','${id}')">Delete</button>
@@ -387,16 +387,16 @@ function renderProductModal(id){
       <button class="modal-close" onclick="MODAL=null;render()">×</button>
     </div>
     <div class="frow c2">
-      <div class="fgrp"><label>Product code *</label><input id="p-code" value="${v('code')}" placeholder="e.g. MTR-WEG-75KW"/></div>
+      <div class="fgrp"><label>Product code *</label><input id="p-code" value="${esc(v('code'))}" placeholder="e.g. MTR-WEG-75KW"/></div>
       <div class="fgrp"><label>Status</label>
         <select id="p-status"><option ${v('status','active')==='active'?'selected':''}>active</option><option ${v('status')==='inactive'?'selected':''}>inactive</option></select>
       </div>
     </div>
-    <div class="frow"><div class="fgrp"><label>Product name *</label><input id="p-name" value="${v('name')}" placeholder="Full product description"/></div></div>
+    <div class="frow"><div class="fgrp"><label>Product name *</label><input id="p-name" value="${esc(v('name'))}" placeholder="Full product description"/></div></div>
     <div class="frow c2">
       <div class="fgrp"><label>Category</label>
-        <input id="p-cat" list="cat-list" value="${v('category')}" placeholder="Select or type new"/>
-        <datalist id="cat-list">${uniqueCats.map(c=>`<option value="${c}"/>`).join('')}</datalist>
+        <input id="p-cat" list="cat-list" value="${esc(v('category'))}" placeholder="Select or type new"/>
+        <datalist id="cat-list">${uniqueCats.map(c=>`<option value="${esc(c)}"/>`).join('')}</datalist>
       </div>
       <div class="fgrp"><label>Unit of measure</label>
         <select id="p-unit">
@@ -405,7 +405,7 @@ function renderProductModal(id){
       </div>
     </div>
     <div class="frow c2">
-      <div class="fgrp"><label>Unit price *</label><input type="number" id="p-price" value="${v('unitPrice',0)}" min="0" step="0.01"/></div>
+      <div class="fgrp"><label>Unit price *</label><input type="number" id="p-price" value="${esc(v('unitPrice',0))}" min="0" step="0.01"/></div>
       <div class="fgrp"><label>Currency</label>
         <select id="p-cur">${['SGD','MYR','USD','EUR'].map(c=>`<option ${v('currency',CO.currency)===c?'selected':''}>${c}</option>`).join('')}</select>
       </div>
@@ -413,10 +413,10 @@ function renderProductModal(id){
     <div class="frow"><div class="fgrp"><label>Preferred supplier (optional)</label>
       <select id="p-sup">
         <option value="">— None —</option>
-        ${DB.suppliers.map(s=>`<option value="${s.id}" ${v('supplierId')===s.id?'selected':''}>${s.name}</option>`).join('')}
+        ${DB.suppliers.map(s=>`<option value="${esc(s.id)}" ${v('supplierId')===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}
       </select>
     </div></div>
-    <div class="frow"><div class="fgrp"><label>Notes / specifications</label><textarea id="p-notes">${v('notes')}</textarea></div></div>
+    <div class="frow"><div class="fgrp"><label>Notes / specifications</label><textarea id="p-notes">${esc(v('notes'))}</textarea></div></div>
     ${isNew?'':auditLine(rec)}
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
       ${!isNew?`<button class="btn btn-danger btn-sm" onclick="delProduct('${id}');MODAL=null;">Delete</button>`:''}
@@ -516,10 +516,10 @@ function openConvertDialog(kind,id){
   ov.style.cssText='position:fixed;inset:0;background:rgba(11,31,75,.45);display:flex;align-items:center;justify-content:center;z-index:9000;padding:16px';
   ov.innerHTML=`<div class="panel" style="width:480px;max-width:100%;margin:0">
     <h4>⇄ ${e(src.name)} as a ${to}</h4>
-    ${linked?`<p style="font-size:13px;margin-bottom:12px">Already a ${to}: <strong>${e(linked.name)}</strong> (${linked.id}).</p>
-      <button class="btn btn-navy" style="width:100%;margin-bottom:8px" onclick="closeConvertDialog();openModal('${to}','${linked.id}')">Open ${to} ${linked.id}</button>`
-    :`${same?`<p class="field-hint" style="margin-bottom:10px">⚠ A ${to} with this name already exists: <strong>${e(same.name)}</strong> (${same.id}).</p>
-        ${opt('link',`Link to existing ${to} ${same.id}`,`No new record — just mark the two as the same company.`)}`:''}
+    ${linked?`<p style="font-size:13px;margin-bottom:12px">Already a ${to}: <strong>${e(linked.name)}</strong> (${esc(linked.id)}).</p>
+      <button class="btn btn-navy" style="width:100%;margin-bottom:8px" onclick="closeConvertDialog();openModal('${to}','${esc(linked.id)}')">Open ${to} ${esc(linked.id)}</button>`
+    :`${same?`<p class="field-hint" style="margin-bottom:10px">⚠ A ${to} with this name already exists: <strong>${e(same.name)}</strong> (${esc(same.id)}).</p>
+        ${opt('link',`Link to existing ${to} ${esc(same.id)}`,`No new record — just mark the two as the same company.`)}`:''}
       ${opt('copy',`Copy — also add as a ${to}`,`Keeps ${e(src.name)} as a ${kind} and creates a ${to} with the same details. Best when you buy from and sell to the same company.`)}
       ${opt('move',`Move — change to a ${to}`,used
         ?`Not possible: ${used} ${kind==='supplier'?'document(s)/product(s)':'document(s)'} use this ${kind}. Use Copy instead.`
@@ -559,7 +559,7 @@ async function convertPartyInner(kind,id,mode){
 // Small tag on cards / list rows for companies that are both
 function alsoTag(kind,x){
   const l=linkedParty(kind,x);
-  return l?`<span class="badge" title="Also ${otherKind(kind)} ${l.id}" style="background:var(--purple-bg);color:var(--purple-tx)">⇄ ${otherKind(kind)}</span>`:'';
+  return l?`<span class="badge" title="Also ${esc(otherKind(kind))} ${esc(l.id)}" style="background:var(--purple-bg);color:var(--purple-tx)">⇄ ${esc(otherKind(kind))}</span>`:'';
 }
 
 /* ═══════════════════════════════════════════════
@@ -571,20 +571,20 @@ function renderCPO(){
   return `
   ${outCount>0?`<div style="background:var(--warning-bg);border:1px solid #fcd34d;border-radius:var(--radius);padding:10px 16px;margin-bottom:14px;font-size:13px;color:var(--warning-tx);display:flex;align-items:center;justify-content:space-between">
     <span>⚠ <strong>${outCount} outstanding</strong> sales order${outCount>1?'s':''} pending invoicing</span>
-    <span style="font-weight:700;font-size:15px">${fmt(outstanding,CO.fxRates?.base||'SGD')}</span>
+    <span style="font-weight:700;font-size:15px">${esc(fmt(outstanding,CO.fxRates?.base||'SGD'))}</span>
   </div>`:''}
   <div class="tbl-wrap"><table>
     <thead><tr><th>SO No.</th><th>Quotation No.</th><th>Client</th><th>Date</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>${DB.clientPOs.map(d=>`<tr>
-      <td class="mono">${d.id}</td>
-      <td class="mono">${d.srcQtId||'—'}</td>
-      <td>${cName(d.clientId)}</td><td>${d.date}</td><td>${fmt(d.amount,d.currency)}</td>
-      <td><span class="badge b-${d.status||'outstanding'}">${d.status||'outstanding'}</span></td>
+      <td class="mono">${esc(d.id)}</td>
+      <td class="mono">${esc(d.srcQtId||'—')}</td>
+      <td>${esc(cName(d.clientId))}</td><td>${esc(d.date)}</td><td>${esc(fmt(d.amount,d.currency))}</td>
+      <td><span class="badge b-${esc(d.status||'outstanding')}">${esc(d.status||'outstanding')}</span></td>
       <td style="white-space:nowrap;display:flex;gap:8px;align-items:center">
-        <button class="alink" onclick="openDocForm('client-po','${d.id}')">Edit</button>
-        <button class="alink" onclick="delDoc('client-po','${d.id}')">Delete</button>
-        <button class="alink" onclick="fromCPOInv('${d.id}')" style="color:var(--success)">→ Invoice</button>
-        <button class="alink" onclick="fromCPOtoDO('${d.id}')" style="color:var(--purple-tx)">→ DO</button>
+        <button class="alink" onclick="openDocForm('client-po','${esc(d.id)}')">Edit</button>
+        <button class="alink" onclick="delDoc('client-po','${esc(d.id)}')">Delete</button>
+        <button class="alink" onclick="fromCPOInv('${esc(d.id)}')" style="color:var(--success)">→ Invoice</button>
+        <button class="alink" onclick="fromCPOtoDO('${esc(d.id)}')" style="color:var(--purple-tx)">→ DO</button>
       </td>
     </tr>`).join('')}
     </tbody>
@@ -608,27 +608,27 @@ function renderDocList(){
   return `<div class="tbl-wrap"><table>
     <thead><tr>${m.cols.map(c=>`<th>${c}</th>`).join('')}<th></th></tr></thead>
     <tbody>${m.rows.map(d=>`<tr>${m.flds.map(f=>{
-      if(f==='clientId')  return `<td>${cName(d[f])}</td>`;
-      if(f==='supplierId')return `<td>${sName(d[f])}</td>`;
-      if(f==='status')    return `<td><span class="badge b-${d[f]}">${LOCK_TYPES[PAGE]&&d[f]==='cancelled'?'voided':d[f]}</span></td>`;
-      if(f==='amount')    return `<td>${fmt(d[f],d.currency)}</td>`;
-      if(f==='id')        return `<td class="mono"><span>${isLockedRec(PAGE,d)?'<span title="Issued — locked">🔒</span> ':''}${d[f]}</span></td>`;
-      if(f==='_pay')      return `<td style="font-size:11px;color:var(--muted)">${d.status==='paid'?`<span style="color:var(--success-tx)">✓ ${d.paidDate||''}</span>${d.paidRef?' · '+d.paidRef:''}${d.paidMethod?' · '+d.paidMethod:''}` : '—'}</td>`;
-      return `<td>${d[f]||'—'}</td>`;
+      if(f==='clientId')  return `<td>${esc(cName(d[f]))}</td>`;
+      if(f==='supplierId')return `<td>${esc(sName(d[f]))}</td>`;
+      if(f==='status')    return `<td><span class="badge b-${esc(d[f])}">${esc(LOCK_TYPES[PAGE]&&d[f]==='cancelled'?'voided':d[f])}</span></td>`;
+      if(f==='amount')    return `<td>${esc(fmt(d[f],d.currency))}</td>`;
+      if(f==='id')        return `<td class="mono"><span>${isLockedRec(PAGE,d)?'<span title="Issued — locked">🔒</span> ':''}${esc(d[f])}</span></td>`;
+      if(f==='_pay')      return `<td style="font-size:11px;color:var(--muted)">${d.status==='paid'?`<span style="color:var(--success-tx)">✓ ${esc(d.paidDate||'')}</span>${esc(d.paidRef?' · '+d.paidRef:'')}${esc(d.paidMethod?' · '+d.paidMethod:'')}` : '—'}</td>`;
+      return `<td>${esc(d[f]||'—')}</td>`;
     }).join('')}<td style="white-space:nowrap;display:flex;gap:8px;align-items:center">
-      <button class="alink" onclick="openDocForm('${PAGE}','${d.id}')">${isLockedRec(PAGE,d)?'View':'Edit'}</button>
-      ${isLockedRec(PAGE,d)?'':`<button class="alink" onclick="delDoc('${PAGE}','${d.id}')">Delete</button>`}
-      ${isPO  ? `<button class="alink" onclick="fromPOtoSupInv('${d.id}')" style="color:var(--success)">→ Purchase Invoice</button>
-                 <button class="alink" onclick="fromPOtoSupDO('${d.id}')"  style="color:var(--purple-tx)">→ Goods Received</button>` : ''}
-      ${isQT  ? `<button class="alink" onclick="fromQTtoSO('${d.id}')"      style="color:var(--warning)">→ SO</button>
-                 <button class="alink" onclick="fromQTtoInvoice('${d.id}')" style="color:var(--success)">→ Invoice</button>
-                 <button class="alink" onclick="fromQTtoDO('${d.id}')"      style="color:var(--purple-tx)">→ DO</button>` : ''}
-      ${isInv ? `<button class="alink" onclick="fromINVtoDO('${d.id}')"     style="color:var(--purple-tx)">→ DO</button>
-                 <button class="alink" onclick="openSOAFromClient('${d.clientId||''}')" style="color:var(--accent-tx)">SOA</button>
+      <button class="alink" onclick="openDocForm('${PAGE}','${esc(d.id)}')">${isLockedRec(PAGE,d)?'View':'Edit'}</button>
+      ${isLockedRec(PAGE,d)?'':`<button class="alink" onclick="delDoc('${PAGE}','${esc(d.id)}')">Delete</button>`}
+      ${isPO  ? `<button class="alink" onclick="fromPOtoSupInv('${esc(d.id)}')" style="color:var(--success)">→ Purchase Invoice</button>
+                 <button class="alink" onclick="fromPOtoSupDO('${esc(d.id)}')"  style="color:var(--purple-tx)">→ Goods Received</button>` : ''}
+      ${isQT  ? `<button class="alink" onclick="fromQTtoSO('${esc(d.id)}')"      style="color:var(--warning)">→ SO</button>
+                 <button class="alink" onclick="fromQTtoInvoice('${esc(d.id)}')" style="color:var(--success)">→ Invoice</button>
+                 <button class="alink" onclick="fromQTtoDO('${esc(d.id)}')"      style="color:var(--purple-tx)">→ DO</button>` : ''}
+      ${isInv ? `<button class="alink" onclick="fromINVtoDO('${esc(d.id)}')"     style="color:var(--purple-tx)">→ DO</button>
+                 <button class="alink" onclick="openSOAFromClient('${esc(d.clientId||'')}')" style="color:var(--accent-tx)">SOA</button>
                  ${d.status==='paid'
-                   ? `<button class="alink" onclick="markInvoiceUnpaid('${d.id}')" style="color:var(--muted)">↩ Unpaid</button>`
+                   ? `<button class="alink" onclick="markInvoiceUnpaid('${esc(d.id)}')" style="color:var(--muted)">↩ Unpaid</button>`
                    : isIssued(d)  // drafts and voided invoices can't take a payment
-                   ? `<button class="alink" onclick="markInvoicePaid('${d.id}')" style="color:var(--success-tx);font-weight:600">✓ Mark paid</button>`
+                   ? `<button class="alink" onclick="markInvoicePaid('${esc(d.id)}')" style="color:var(--success-tx);font-weight:600">✓ Mark paid</button>`
                    : ''
                  }` : ''}
     </td></tr>`).join('')}</tbody>
@@ -659,19 +659,19 @@ function renderSupInvoiceList(){
   return `<div class="tbl-wrap"><table>
     <thead><tr><th>Ref</th><th>Supplier ref</th><th>Supplier</th><th>Invoice date</th><th>Due date</th><th>Amount</th><th>PO ref</th><th>Project (client inv.)</th><th>Status</th><th></th></tr></thead>
     <tbody>${rows.map(d=>`<tr>
-      <td class="mono">${d.id}</td>
-      <td style="font-size:12px;color:var(--muted)">${d.supplierRef||'—'}</td>
-      <td>${sName(d.supplierId)}</td>
-      <td>${d.date}</td>
-      <td>${d.due||'—'}</td>
-      <td>${fmt(d.amount,d.currency)}</td>
-      <td class="mono" style="font-size:12px">${d.ref||'—'}</td>
-      <td class="mono" style="font-size:12px">${d.clientInvRef||'—'}</td>
-      <td><span class="badge b-${d.status}">${d.status}</span></td>
+      <td class="mono">${esc(d.id)}</td>
+      <td style="font-size:12px;color:var(--muted)">${esc(d.supplierRef||'—')}</td>
+      <td>${esc(sName(d.supplierId))}</td>
+      <td>${esc(d.date)}</td>
+      <td>${esc(d.due||'—')}</td>
+      <td>${esc(fmt(d.amount,d.currency))}</td>
+      <td class="mono" style="font-size:12px">${esc(d.ref||'—')}</td>
+      <td class="mono" style="font-size:12px">${esc(d.clientInvRef||'—')}</td>
+      <td><span class="badge b-${esc(d.status)}">${esc(d.status)}</span></td>
       <td style="white-space:nowrap">
-        <button class="alink" onclick="openDocForm('sup-invoice','${d.id}')">Edit</button> &nbsp;
-        <button class="alink" onclick="fromSupInvtoDO('${d.id}')" style="color:var(--purple-tx)">→ Goods Received</button> &nbsp;
-        <button class="alink" onclick="delDoc('sup-invoice','${d.id}')">Delete</button>
+        <button class="alink" onclick="openDocForm('sup-invoice','${esc(d.id)}')">Edit</button> &nbsp;
+        <button class="alink" onclick="fromSupInvtoDO('${esc(d.id)}')" style="color:var(--purple-tx)">→ Goods Received</button> &nbsp;
+        <button class="alink" onclick="delDoc('sup-invoice','${esc(d.id)}')">Delete</button>
       </td>
     </tr>`).join('')}</tbody>
   </table></div>`;
@@ -717,15 +717,15 @@ function renderProjectPnL(){
   const n=v=>v.toLocaleString('en-SG',{minimumFractionDigits:2,maximumFractionDigits:2});
   const col=v=>v<0?'#991b1b':'#065f46';
   const filters=`<div class="panel" style="margin-bottom:14px"><div class="frow c3">
-    <div class="fgrp"><label>Client</label><select onchange="pnlSet('client',this.value)"><option value="">All clients</option>${DB.clients.map(c=>`<option value="${c.id}" ${PNL.client===c.id?'selected':''}>${c.name}</option>`).join('')}</select></div>
-    <div class="fgrp"><label>Invoice date from</label><input type="date" value="${PNL.from}" onchange="pnlSet('from',this.value)"/></div>
-    <div class="fgrp"><label>Invoice date to</label><input type="date" value="${PNL.to}" onchange="pnlSet('to',this.value)"/></div>
+    <div class="fgrp"><label>Client</label><select onchange="pnlSet('client',this.value)"><option value="">All clients</option>${DB.clients.map(c=>`<option value="${esc(c.id)}" ${PNL.client===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+    <div class="fgrp"><label>Invoice date from</label><input type="date" value="${esc(PNL.from)}" onchange="pnlSet('from',this.value)"/></div>
+    <div class="fgrp"><label>Invoice date to</label><input type="date" value="${esc(PNL.to)}" onchange="pnlSet('to',this.value)"/></div>
   </div></div>`;
   const stats=`<div class="stats">
-    <div class="stat"><div class="stat-label">Revenue (ex-GST)</div><div class="stat-val" style="font-size:18px">${b} ${n(d.totRev)}</div><div class="stat-sub">${d.projects.length} client invoice(s)</div></div>
+    <div class="stat"><div class="stat-label">Revenue (ex-GST)</div><div class="stat-val" style="font-size:18px">${b} ${n(d.totRev)}</div><div class="stat-sub">${esc(d.projects.length)} client invoice(s)</div></div>
     <div class="stat"><div class="stat-label">Linked costs (ex-GST)</div><div class="stat-val" style="font-size:18px">${b} ${n(d.totCost)}</div><div class="stat-sub">purchase invoices linked</div></div>
-    <div class="stat ${d.totProfit<0?'red':''}"><div class="stat-label">Gross profit</div><div class="stat-val" style="font-size:18px;color:${col(d.totProfit)}">${b} ${n(d.totProfit)}</div><div class="stat-sub">margin ${d.totMargin.toFixed(1)}%</div></div>
-    <div class="stat ${d.unlinked.length?'red':''}"><div class="stat-label">Unlinked purchase invoices</div><div class="stat-val" style="font-size:18px">${b} ${n(d.unlinkedTotal)}</div><div class="stat-sub">${d.unlinked.length} not tied to a project</div></div>
+    <div class="stat ${d.totProfit<0?'red':''}"><div class="stat-label">Gross profit</div><div class="stat-val" style="font-size:18px;color:${col(d.totProfit)}">${b} ${n(d.totProfit)}</div><div class="stat-sub">margin ${esc(d.totMargin.toFixed(1))}%</div></div>
+    <div class="stat ${d.unlinked.length?'red':''}"><div class="stat-label">Unlinked purchase invoices</div><div class="stat-val" style="font-size:18px">${b} ${n(d.unlinkedTotal)}</div><div class="stat-sub">${esc(d.unlinked.length)} not tied to a project</div></div>
   </div>`;
   if(!d.projects.length) return filters+stats+`<div class="empty" style="padding:40px 20px">No client invoices match these filters.</div>`;
   const rows=d.projects.map(p=>{
@@ -735,29 +735,29 @@ function renderProjectPnL(){
       ${p.costs.length?`<table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr>
         <th style="text-align:left;padding:4px 8px">Purchase inv.</th><th style="text-align:left;padding:4px 8px">Supplier</th><th style="text-align:left;padding:4px 8px">Supplier ref</th><th style="text-align:left;padding:4px 8px">Date</th>
         <th style="text-align:right;padding:4px 8px">Amount (ex-GST)</th><th style="text-align:right;padding:4px 8px">${b}</th><th></th></tr></thead><tbody>
-        ${p.costs.map(s=>`<tr><td class="mono" style="padding:4px 8px">${s.id}</td><td style="padding:4px 8px">${sName(s.supplierId)}</td><td style="padding:4px 8px">${s.supplierRef||'—'}</td><td style="padding:4px 8px">${s.date||'—'}</td>
-          <td style="padding:4px 8px;text-align:right">${s.currency} ${n(docSub(s))}</td><td style="padding:4px 8px;text-align:right">${n(s.costBase)}</td>
-          <td style="padding:4px 8px;text-align:right"><button class="alink" onclick="pnlUnlink('${s.id}')">Unlink</button></td></tr>`).join('')}
+        ${p.costs.map(s=>`<tr><td class="mono" style="padding:4px 8px">${esc(s.id)}</td><td style="padding:4px 8px">${esc(sName(s.supplierId))}</td><td style="padding:4px 8px">${esc(s.supplierRef||'—')}</td><td style="padding:4px 8px">${esc(s.date||'—')}</td>
+          <td style="padding:4px 8px;text-align:right">${esc(s.currency)} ${n(docSub(s))}</td><td style="padding:4px 8px;text-align:right">${n(s.costBase)}</td>
+          <td style="padding:4px 8px;text-align:right"><button class="alink" onclick="pnlUnlink('${esc(s.id)}')">Unlink</button></td></tr>`).join('')}
         </tbody></table>`:`<div style="font-size:12px;color:var(--muted)">No purchase invoices linked yet.</div>`}
-      ${unl.length?`<div style="display:flex;gap:8px;align-items:center;margin-top:10px"><select id="pnl-link-${p.inv.id}" style="max-width:380px"><option value="">Link an unlinked purchase invoice…</option>${unl.map(s=>`<option value="${s.id}">${s.id} · ${sName(s.supplierId)} · ${fmt(s.amount,s.currency)}</option>`).join('')}</select><button class="btn btn-sm" onclick="pnlLink('${p.inv.id}')">Link</button></div>`:''}
+      ${unl.length?`<div style="display:flex;gap:8px;align-items:center;margin-top:10px"><select id="pnl-link-${esc(p.inv.id)}" style="max-width:380px"><option value="">Link an unlinked purchase invoice…</option>${unl.map(s=>`<option value="${esc(s.id)}">${esc(s.id)} · ${esc(sName(s.supplierId))} · ${esc(fmt(s.amount,s.currency))}</option>`).join('')}</select><button class="btn btn-sm" onclick="pnlLink('${esc(p.inv.id)}')">Link</button></div>`:''}
     </td></tr>`:'';
-    return `<tr style="cursor:pointer" onclick="pnlToggle('${p.inv.id}')">
+    return `<tr style="cursor:pointer" onclick="pnlToggle('${esc(p.inv.id)}')">
       <td style="width:24px">${open?'▾':'▸'}</td>
-      <td>${p.inv.date||'—'}</td><td>${cName(p.inv.clientId)}</td><td class="mono">${p.inv.id}</td>
+      <td>${esc(p.inv.date||'—')}</td><td>${esc(cName(p.inv.clientId))}</td><td class="mono">${esc(p.inv.id)}</td>
       <td style="text-align:right">${n(p.rev)}</td><td style="text-align:right">${n(p.cost)}${p.costs.length?'':' <span style="font-size:10px;color:var(--muted)">(none linked)</span>'}</td>
       <td style="text-align:right;font-weight:600;color:${col(p.profit)}">${n(p.profit)}</td>
-      <td style="text-align:right;color:${col(p.profit)}">${p.margin.toFixed(1)}%</td>
-      <td><span class="badge b-${p.inv.status}">${p.inv.status}</span></td>
+      <td style="text-align:right;color:${col(p.profit)}">${esc(p.margin.toFixed(1))}%</td>
+      <td><span class="badge b-${esc(p.inv.status)}">${esc(p.inv.status)}</span></td>
     </tr>${detail}`;
   }).join('');
   const unlinkedBlock=d.unlinked.length?`<div class="sec-hdr" style="margin-top:18px"><h3>Purchase invoices not linked to a project</h3></div>
     <div class="tbl-wrap"><table><thead><tr><th>Purchase inv.</th><th>Supplier</th><th>Date</th><th style="text-align:right">Amount (ex-GST, ${b})</th><th></th></tr></thead><tbody>
-    ${d.unlinked.map(s=>`<tr><td class="mono">${s.id}</td><td>${sName(s.supplierId)}</td><td>${s.date||'—'}</td><td style="text-align:right">${n(s.costBase)}</td><td><button class="alink" onclick="openDocForm('sup-invoice','${s.id}')">Edit &amp; link</button></td></tr>`).join('')}
+    ${d.unlinked.map(s=>`<tr><td class="mono">${esc(s.id)}</td><td>${esc(sName(s.supplierId))}</td><td>${esc(s.date||'—')}</td><td style="text-align:right">${n(s.costBase)}</td><td><button class="alink" onclick="openDocForm('sup-invoice','${esc(s.id)}')">Edit &amp; link</button></td></tr>`).join('')}
     </tbody></table></div>`:'';
   return filters+stats+`<div class="tbl-wrap"><table><thead><tr><th></th><th>Date</th><th>Client</th><th>Client invoice</th>
     <th style="text-align:right">Revenue (${b})</th><th style="text-align:right">Cost (${b})</th><th style="text-align:right">Profit (${b})</th><th style="text-align:right">Margin</th><th>Status</th></tr></thead>
     <tbody>${rows}<tr style="background:var(--card2);font-weight:700"><td></td><td colspan="3" style="text-align:right">Total</td>
-      <td style="text-align:right">${n(d.totRev)}</td><td style="text-align:right">${n(d.totCost)}</td><td style="text-align:right;color:${col(d.totProfit)}">${n(d.totProfit)}</td><td style="text-align:right;color:${col(d.totProfit)}">${d.totMargin.toFixed(1)}%</td><td></td></tr></tbody></table></div>`
+      <td style="text-align:right">${n(d.totRev)}</td><td style="text-align:right">${n(d.totCost)}</td><td style="text-align:right;color:${col(d.totProfit)}">${n(d.totProfit)}</td><td style="text-align:right;color:${col(d.totProfit)}">${esc(d.totMargin.toFixed(1))}%</td><td></td></tr></tbody></table></div>`
     +unlinkedBlock
     +`<div style="font-size:11px;color:var(--muted);margin:10px 2px 24px">Figures exclude GST and are converted to ${b} using your FX rates. Cancelled documents are excluded. Credit/debit notes are standalone and are not included.</div>`;
 }
@@ -786,16 +786,16 @@ function renderCreditDebitList(type){
   return `<div class="tbl-wrap"><table>
     <thead><tr><th>${isCN?'CN':'DN'} No.</th><th>Applies to</th><th>Party</th><th>Date</th><th>Reference</th><th>Amount</th><th>Status</th><th></th></tr></thead>
     <tbody>${rows.map(d=>`<tr>
-      <td class="mono"><span>${isLockedRec(type,d)?'<span title="Issued — locked">🔒</span> ':''}${d.id}</span></td>
+      <td class="mono"><span>${isLockedRec(type,d)?'<span title="Issued — locked">🔒</span> ':''}${esc(d.id)}</span></td>
       <td>${d.partyType==='supplier'?'Supplier':'Client'}</td>
-      <td>${d.partyType==='supplier'?sName(d.supplierId):cName(d.clientId)}</td>
-      <td>${d.date}</td>
-      <td class="mono" style="font-size:12px">${d.ref||'—'}</td>
-      <td>${fmt(d.amount,d.currency)}</td>
-      <td><span class="badge b-${d.status||'draft'}">${d.status==='cancelled'?'voided':d.status||'draft'}</span></td>
+      <td>${esc(d.partyType==='supplier'?sName(d.supplierId):cName(d.clientId))}</td>
+      <td>${esc(d.date)}</td>
+      <td class="mono" style="font-size:12px">${esc(d.ref||'—')}</td>
+      <td>${esc(fmt(d.amount,d.currency))}</td>
+      <td><span class="badge b-${esc(d.status||'draft')}">${esc(d.status==='cancelled'?'voided':d.status||'draft')}</span></td>
       <td style="white-space:nowrap;display:flex;gap:8px;align-items:center">
-        <button class="alink" onclick="openDocForm('${type}','${d.id}')">${isLockedRec(type,d)?'View':'Edit'}</button>
-        ${isLockedRec(type,d)?'':`<button class="alink" onclick="delDoc('${type}','${d.id}')">Delete</button>`}
+        <button class="alink" onclick="openDocForm('${type}','${esc(d.id)}')">${isLockedRec(type,d)?'View':'Edit'}</button>
+        ${isLockedRec(type,d)?'':`<button class="alink" onclick="delDoc('${type}','${esc(d.id)}')">Delete</button>`}
       </td>
     </tr>`).join('')}</tbody>
   </table></div>`;
@@ -813,17 +813,17 @@ function renderSupDOList(){
   return `<div class="tbl-wrap"><table>
     <thead><tr><th>DO Ref</th><th>Supplier</th><th>Date received</th><th>Items</th><th>PO ref</th><th>Supplier invoice</th><th>Received by</th><th>Status</th><th></th></tr></thead>
     <tbody>${rows.map(d=>`<tr>
-      <td class="mono">${d.id}</td>
-      <td>${sName(d.supplierId)}</td>
-      <td>${d.receivedDate||d.date}</td>
-      <td style="font-size:12px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.items||'—'}</td>
-      <td class="mono" style="font-size:12px">${d.ref||'—'}</td>
-      <td class="mono" style="font-size:12px">${d.sinvRef||'—'}</td>
-      <td style="font-size:12px">${d.receivedBy||'—'}</td>
-      <td><span class="badge b-${d.status}">${d.status}</span></td>
+      <td class="mono">${esc(d.id)}</td>
+      <td>${esc(sName(d.supplierId))}</td>
+      <td>${esc(d.receivedDate||d.date)}</td>
+      <td style="font-size:12px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.items||'—')}</td>
+      <td class="mono" style="font-size:12px">${esc(d.ref||'—')}</td>
+      <td class="mono" style="font-size:12px">${esc(d.sinvRef||'—')}</td>
+      <td style="font-size:12px">${esc(d.receivedBy||'—')}</td>
+      <td><span class="badge b-${esc(d.status)}">${esc(d.status)}</span></td>
       <td style="white-space:nowrap">
-        <button class="alink" onclick="openDocForm('sup-do','${d.id}')">Edit</button> &nbsp;
-        <button class="alink" onclick="delDoc('sup-do','${d.id}')">Delete</button>
+        <button class="alink" onclick="openDocForm('sup-do','${esc(d.id)}')">Edit</button> &nbsp;
+        <button class="alink" onclick="delDoc('sup-do','${esc(d.id)}')">Delete</button>
       </td>
     </tr>`).join('')}</tbody>
   </table></div>`;

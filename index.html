@@ -515,7 +515,7 @@ function applyRemote(coll,id,row){
 }
 
 // Someone else changed these records first: keep a local backup of our version, then take theirs
-async function resolveConflicts(list){
+async function resolveConflicts(list,why){
   const sb=getSB();
   let stash=[]; try{ stash=JSON.parse(localStorage.getItem('mp_conflicts')||'[]'); }catch(e){}
   for(const c of list){
@@ -527,7 +527,8 @@ async function resolveConflicts(list){
   try{ localStorage.setItem('mp_conflicts',JSON.stringify(stash.slice(-50))); }catch(e){}
   persistLocal(); persistSynced();
   const ids=list.slice(0,3).map(c=>c.id).join(', ')+(list.length>3?` +${list.length-3} more`:'');
-  toast(`${ids} was changed by another user — their version is loaded, please redo your edit`,false);
+  toast(why==='locked'?`${ids} is issued and locked — the change was refused and the saved version reloaded`
+    :`${ids} was changed by another user — their version is loaded, please redo your edit`,false);
   safeRender();
 }
 
@@ -549,6 +550,8 @@ async function pushChanges(){
     (data.deleted||[]).forEach(s=>{ if(SYNCED[s.coll]) delete SYNCED[s.coll][s.id]; });
     persistSynced();
     if(data.conflicts&&data.conflicts.length) await resolveConflicts(data.conflicts);
+    // Refused by the database's lock on issued documents (supabase_lock_setup.sql)
+    if(data.rejected&&data.rejected.length) await resolveConflicts(data.rejected,'locked');
     setSyncStatus('ok'); return true;
   }catch(e){ console.warn('saveDB:',e); setSyncStatus('error'); return false; }
 }
@@ -1095,20 +1098,20 @@ setInterval(runAutoStatuses, 60*60*1000);
 function linkSources(rec){
   if(rec.srcQtId){
     const qt=DB.quotations.find(q=>q.id===rec.srcQtId);
-    if(qt&&qt.status!=='converted'){ qt.statusBeforeConvert=qt.autoPrevStatus||qt.status; delete qt.autoPrevStatus; qt.status='converted'; }
+    if(qt&&qt.status!=='converted'){ qt.statusBeforeConvert=qt.autoPrevStatus||qt.status; delete qt.autoPrevStatus; qt.status='converted'; touch(qt,'converted → '+rec.id); }
   }
   if(rec.srcSoId){
     const so=DB.clientPOs.find(s=>s.id===rec.srcSoId);
-    if(so&&(!so.status||so.status==='outstanding'||so.status==='delivered')) so.status='invoiced';
+    if(so&&(!so.status||so.status==='outstanding'||so.status==='delivered')){ so.status='invoiced'; touch(so,'invoiced → '+rec.id); }
   }
 }
 // Deleting that SO / invoice puts the source back, unless another document still uses it
 function unlinkSources(doc){
-  if(doc.srcQtId&&![...DB.clientPOs,...DB.invoices].some(d=>d.srcQtId===doc.srcQtId)){
+  if(doc.srcQtId&&![...DB.clientPOs,...DB.invoices].some(d=>d!==doc&&isLive(d)&&d.srcQtId===doc.srcQtId)){
     const qt=DB.quotations.find(q=>q.id===doc.srcQtId);
     if(qt&&qt.status==='converted'){ qt.status=qt.statusBeforeConvert||'draft'; delete qt.statusBeforeConvert; }
   }
-  if(doc.srcSoId&&!DB.invoices.some(d=>d.srcSoId===doc.srcSoId)){
+  if(doc.srcSoId&&!DB.invoices.some(d=>d!==doc&&isLive(d)&&d.srcSoId===doc.srcSoId)){
     const so=DB.clientPOs.find(s=>s.id===doc.srcSoId);
     if(so&&so.status==='invoiced') so.status='outstanding';  // becomes 'delivered' again if it has a DO
   }
@@ -1163,7 +1166,7 @@ function render(){
   const TA=document.getElementById('tb-acts');
   TA.innerHTML='';
   if(MODAL)   { C.innerHTML=renderModal(); return; }
-  if(DOC_TYPE){ C.innerHTML=renderDocForm(); return; }
+  if(DOC_TYPE){ C.innerHTML=renderDocForm(); decorateDocForm(); return; }
   switch(PAGE){
     case 'dash':     C.innerHTML=renderDash(); break;
     case 'clients':  TA.innerHTML=`<button class="btn btn-gold" onclick="openModal('client','new')">+ Add client</button>`; C.innerHTML=renderContacts('clients'); break;
@@ -1203,7 +1206,7 @@ function renderDash(){
     ${(()=>{
       const now=new Date();
       const yyyymm=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-      const monthInv=DB.invoices.filter(d=>(d.date||'').startsWith(yyyymm));
+      const monthInv=DB.invoices.filter(d=>isIssued(d)&&(d.date||'').startsWith(yyyymm));
       const total=monthInv.reduce((s,d)=>s+toBase(d.amount||0,d.currency),0);
       return `<div class="stat-val" style="font-size:18px">${fmt(total,CO.fxRates?.base||'SGD')}</div><div class="stat-sub">${monthInv.length} invoices · ${CO.fxRates?.base||'SGD'} equiv.</div>`;
     })()}</div>
@@ -1282,6 +1285,11 @@ function renderFollowUps(){
      rows:DB.quotations.filter(q=>['draft','sent'].includes(q.status)&&(q.date||t)<=ago7),
      line:q=>`${cName(q.clientId)} · ${fmt(q.amount,q.currency)} · ${q.date}`,
      acts:q=>`<button class="alink" onclick="fromQTtoSO('${q.id}')" style="color:var(--warning)">→ SO</button>`},
+    {title:'Draft invoices / notes not issued yet', page:'invoice',
+     rows:[...DB.invoices,...DB.creditNotes,...DB.debitNotes].filter(d=>d.status==='draft'),
+     line:d=>`${d.partyType==='supplier'?sName(d.supplierId):cName(d.clientId)} · ${fmt(d.amount,d.currency)} · ${d.date||''}`,
+     openJs:d=>`openDocForm('${DB.invoices.includes(d)?'invoice':DB.creditNotes.includes(d)?'credit-note':'debit-note'}','${d.id}')`,
+     acts:d=>`<button class="alink" onclick="openDocForm('${DB.invoices.includes(d)?'invoice':DB.creditNotes.includes(d)?'credit-note':'debit-note'}','${d.id}')">Open</button>`},
     {title:'Invoices due in the next 7 days', page:'invoice',
      rows:DB.invoices.filter(i=>['pending','sent','issued'].includes(i.status)&&i.due>=t&&i.due<=in7),
      line:i=>`${cName(i.clientId)} · ${fmt(i.amount,i.currency)} · due ${i.due}`,
@@ -1312,7 +1320,7 @@ function renderFollowUps(){
         <span class="badge b-pending">${g.rows.length}</span>
       </div>
       ${g.rows.slice(0,5).map(d=>`<div style="display:flex;gap:8px;align-items:center;padding:5px 0;border-top:1px solid var(--border);font-size:12px">
-        <span class="mono" style="cursor:pointer;color:var(--accent-tx)" onclick="openDocForm('${g.page}','${d.id}')">${d.id}</span>
+        <span class="mono" style="cursor:pointer;color:var(--accent-tx)" onclick="${g.openJs?g.openJs(d):`openDocForm('${g.page}','${d.id}')`}">${d.id}</span>
         <span style="flex:1;min-width:0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${g.line(d)}</span>
         ${g.acts(d)}
       </div>`).join('')}
@@ -1540,6 +1548,7 @@ function renderModal(){
     </div></div>
     <div class="frow"><div class="fgrp"><label>Notes</label><textarea id="m-notes">${v('notes')}</textarea></div></div>
     ${!isNew&&linkedParty(type,rec)?`<div class="field-hint" style="margin-bottom:8px">⇄ Also a ${isC?'supplier':'client'}: <button class="alink" onclick="openModal('${isC?'supplier':'client'}','${linkedParty(type,rec).id}')">${escAttr(linkedParty(type,rec).name)} (${linkedParty(type,rec).id})</button></div>`:''}
+    ${isNew?'':auditLine(rec)}
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px;flex-wrap:wrap">
       ${!isNew?`<button class="btn btn-danger btn-sm" onclick="delContact('${type}','${id}')">Delete</button>
       <button class="btn btn-sm" style="margin-right:auto" onclick="openConvertDialog('${type}','${id}')">⇄ Convert to ${isC?'supplier':'client'}</button>`:''}
@@ -1591,6 +1600,7 @@ function renderProductModal(id){
       </select>
     </div></div>
     <div class="frow"><div class="fgrp"><label>Notes / specifications</label><textarea id="p-notes">${v('notes')}</textarea></div></div>
+    ${isNew?'':auditLine(rec)}
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
       ${!isNew?`<button class="btn btn-danger btn-sm" onclick="delProduct('${id}');MODAL=null;">Delete</button>`:''}
       <button class="btn btn-sm" onclick="MODAL=null;render()">Cancel</button>
@@ -1623,6 +1633,8 @@ async function saveProductInner(id){
     status:document.getElementById('p-status').value,
     notes:document.getElementById('p-notes').value.trim(),
   };
+  if(!isNew) keepMeta(rec,DB.products.find(x=>x.id===id));
+  touch(rec,isNew?'created':'edited',isNew);
   if(isNew) DB.products.push(rec);
   else { const i=DB.products.findIndex(x=>x.id===id); if(i>=0) DB.products[i]=rec; }
   saveDB(); pills(); MODAL=null; toast(isNew?'Product added':'Product updated'); render();
@@ -1646,6 +1658,7 @@ async function saveContactInner(type,id){
   if(isC){ rec.industry=document.getElementById('m-ind').value; rec.gst=document.getElementById('m-gst').value; }
   else   { rec.category=document.getElementById('m-cat').value; rec.currency=document.getElementById('m-cur').value; }
   if(!isNew) keepMeta(rec,list.find(x=>x.id===id));  // keep fields the form doesn't show (e.g. the client⇄supplier link)
+  touch(rec,isNew?'created':'edited',isNew);
   if(isNew) list.push(rec);
   else { const i=list.findIndex(x=>x.id===id); if(i>=0) list[i]=rec; }
   saveDB(); pills(); MODAL=null; toast(isNew?'Record added':'Record updated'); render();
@@ -1719,6 +1732,7 @@ async function convertPartyInner(kind,id,mode){
   if(to==='supplier'){ const last=lastClientDoc(id); rec.category=src2.industry||''; rec.currency=(last&&last.currency)||CO.currency; }
   else rec.industry=src2.category||'';
   if(mode==='copy'){ rec[newLink]=id; src2[srcLink]=newId; }
+  touch(rec,`created (${mode==='move'?'moved':'copied'} from ${kind} ${id})`,true);
   DB[toKey].push(rec);
   if(mode==='move') DB[fromKey]=DB[fromKey].filter(x=>x.id!==id);
   saveDB(); pills(); closeConvertDialog();
@@ -1781,12 +1795,12 @@ function renderDocList(){
       if(f==='supplierId')return `<td>${sName(d[f])}</td>`;
       if(f==='status')    return `<td><span class="badge b-${d[f]}">${d[f]}</span></td>`;
       if(f==='amount')    return `<td>${fmt(d[f],d.currency)}</td>`;
-      if(f==='id')        return `<td class="mono">${d[f]}</td>`;
+      if(f==='id')        return `<td class="mono">${isLockedRec(PAGE,d)?'<span title="Issued — locked">🔒</span> ':''}${d[f]}</td>`;
       if(f==='_pay')      return `<td style="font-size:11px;color:var(--muted)">${d.status==='paid'?`<span style="color:var(--success-tx)">✓ ${d.paidDate||''}</span>${d.paidRef?' · '+d.paidRef:''}${d.paidMethod?' · '+d.paidMethod:''}` : '—'}</td>`;
       return `<td>${d[f]||'—'}</td>`;
     }).join('')}<td style="white-space:nowrap;display:flex;gap:8px;align-items:center">
-      <button class="alink" onclick="openDocForm('${PAGE}','${d.id}')">Edit</button>
-      <button class="alink" onclick="delDoc('${PAGE}','${d.id}')">Delete</button>
+      <button class="alink" onclick="openDocForm('${PAGE}','${d.id}')">${isLockedRec(PAGE,d)?'View':'Edit'}</button>
+      ${isLockedRec(PAGE,d)?'':`<button class="alink" onclick="delDoc('${PAGE}','${d.id}')">Delete</button>`}
       ${isPO  ? `<button class="alink" onclick="fromPOtoSupInv('${d.id}')" style="color:var(--success)">→ Purchase Invoice</button>
                  <button class="alink" onclick="fromPOtoSupDO('${d.id}')"  style="color:var(--purple-tx)">→ Goods Received</button>` : ''}
       ${isQT  ? `<button class="alink" onclick="fromQTtoSO('${d.id}')"      style="color:var(--warning)">→ SO</button>
@@ -1803,6 +1817,8 @@ function renderDocList(){
 }
 
 function delDoc(type,id){
+  const target=LOCK_TYPES[type]&&(DB[LOCK_TYPES[type]]||[]).find(x=>x.id===id);
+  if(isLockedRec(type,target)){ toast(`${id} is issued — it can't be deleted. Void it or issue a credit note instead.`,false); return; }
   if(!confirm('Delete this document?')) return;
   const map={quotation:'quotations',invoice:'invoices',do:'dos',po:'pos','client-po':'clientPOs','sup-invoice':'supInvoices','sup-do':'supDOs','credit-note':'creditNotes','debit-note':'debitNotes'};
   const key=map[type]; if(!key) return;
@@ -1863,7 +1879,7 @@ function pnlUnlink(sid){
 }
 function pnlData(){
   const base=CO.fxRates?.base||'SGD';
-  const invs=DB.invoices.filter(i=>i.status!=='cancelled' && (!PNL.client||i.clientId===PNL.client) && (!PNL.from||(i.date||'')>=PNL.from) && (!PNL.to||(i.date||'')<=PNL.to));
+  const invs=DB.invoices.filter(i=>isIssued(i) && (!PNL.client||i.clientId===PNL.client) && (!PNL.from||(i.date||'')>=PNL.from) && (!PNL.to||(i.date||'')<=PNL.to));
   const projects=invs.map(i=>{
     const rev=toBase(docSub(i),i.currency);
     const costs=DB.supInvoices.filter(s=>s.clientInvRef===i.id && s.status!=='cancelled').map(s=>({...s,costBase:toBase(docSub(s),s.currency)}));
@@ -1951,16 +1967,16 @@ function renderCreditDebitList(type){
   return `<div class="tbl-wrap"><table>
     <thead><tr><th>${isCN?'CN':'DN'} No.</th><th>Applies to</th><th>Party</th><th>Date</th><th>Reference</th><th>Amount</th><th>Status</th><th></th></tr></thead>
     <tbody>${rows.map(d=>`<tr>
-      <td class="mono">${d.id}</td>
+      <td class="mono">${isLockedRec(type,d)?'<span title="Issued — locked">🔒</span> ':''}${d.id}</td>
       <td>${d.partyType==='supplier'?'Supplier':'Client'}</td>
       <td>${d.partyType==='supplier'?sName(d.supplierId):cName(d.clientId)}</td>
       <td>${d.date}</td>
       <td class="mono" style="font-size:12px">${d.ref||'—'}</td>
       <td>${fmt(d.amount,d.currency)}</td>
-      <td><span class="badge b-${d.status||'draft'}">${d.status||'draft'}</span></td>
+      <td><span class="badge b-${d.status||'draft'}">${d.status==='cancelled'?'voided':d.status||'draft'}</span></td>
       <td style="white-space:nowrap;display:flex;gap:8px;align-items:center">
-        <button class="alink" onclick="openDocForm('${type}','${d.id}')">Edit</button>
-        <button class="alink" onclick="delDoc('${type}','${d.id}')">Delete</button>
+        <button class="alink" onclick="openDocForm('${type}','${d.id}')">${isLockedRec(type,d)?'View':'Edit'}</button>
+        ${isLockedRec(type,d)?'':`<button class="alink" onclick="delDoc('${type}','${d.id}')">Delete</button>`}
       </td>
     </tr>`).join('')}</tbody>
   </table></div>`;
@@ -2130,6 +2146,7 @@ function openDocForm(type,id){
       currency:rec.currency||CO.currency, notes:rec.notes||'', attn:rec.attn||'',
       valid:rec.valid||addDays(today(),30), due:rec.due||addDays(today(),30),
       supplierRef:rec.supplierRef||'',
+      status:rec.status,  // so a form shows (and re-saves) the document's real status
       clientInvRef:rec.clientInvRef||'',
       // Invoice / DO extra fields
       billingAddr:rec.billingAddr||'',
@@ -2280,7 +2297,7 @@ function renderDocForm(){
         </div>
       </div>
       <div style="font-size:11px;color:var(--muted);text-align:right">
-        ${EDIT_ID==='new'?'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">NEW</span>':'<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">EDITING</span>'}
+        ${EDIT_ID==='new'?'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">NEW</span>':(isLockedDoc()?'<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">🔒 LOCKED</span>':'<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">EDITING</span>')}
       </div>
     </div>
     <div class="frow c3">
@@ -2452,7 +2469,10 @@ function renderDocForm(){
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:28px">
     <button class="btn" onclick="DOC_TYPE=null;render()">Cancel</button>
     <button class="btn" onclick="DOC_TAB='preview';render()">Preview</button>
-    <button class="btn btn-navy" onclick="saveDoc()">Save document</button>
+    ${LOCK_TYPES[DOC_TYPE]
+      ?`<button class="btn" onclick="saveDoc()">Save draft</button>
+         <button class="btn btn-navy" onclick="saveDoc({issue:true})" title="Locks the invoice — corrections then go through a credit / debit note">✓ Save &amp; issue</button>`
+      :`<button class="btn btn-navy" onclick="saveDoc()">Save document</button>`}
   </div>`}`;
 }
 
@@ -2621,20 +2641,112 @@ function confirmNoDuplicate(){
   }
   return !dup||confirm(`${dup.id} already exists for ${why}.\n\nSave this new document anyway?`);
 }
-function saveDoc(){ return withSaving(saveDocInner); }
+// opts.issue: save and issue (locks invoices / credit notes / debit notes)
+function saveDoc(opts){ return withSaving(()=>saveDocInner(opts)); }
 // Editing rebuilds a record from the form; keep fields the form doesn't show
 // (email log, reminders sent, links, payment details) so an edit never wipes them
 function keepMeta(rec,existing){
   if(existing) Object.keys(existing).forEach(k=>{ if(!(k in rec)) rec[k]=existing[k]; });
   return rec;
 }
-async function saveDocInner(){
+
+/* ── WHO DID WHAT: created by / last edited by + a short history on each record ── */
+const whoAmI=()=>(AUTH_USER&&AUTH_USER.email)||'unknown';
+// isNew: stamp "created" too (records from before tracking began just show "created before tracking")
+function touch(rec,action,isNew=false){
+  const at=new Date().toISOString(), by=whoAmI();
+  if(isNew&&!rec.createdAt){ rec.createdAt=at; rec.createdBy=by; }
+  rec.updatedAt=at; rec.updatedBy=by;
+  rec.history=[...(rec.history||[]),{at,by,action}].slice(-30);
+  return rec;
+}
+const fmtWhen=s=>s?new Date(s).toLocaleString('en-SG',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+function auditLine(rec){
+  if(!rec||(!rec.createdAt&&!rec.updatedAt)) return '';
+  const e=escAttr;
+  return `<div class="field-hint" style="margin:6px 0">${rec.createdAt?`Created ${fmtWhen(rec.createdAt)} by ${e(rec.createdBy)}`:'Created before tracking began'}${rec.updatedAt?` · Last edited ${fmtWhen(rec.updatedAt)} by ${e(rec.updatedBy)}`:''}</div>`;
+}
+
+/* ── ISSUED DOCUMENTS ARE LOCKED ──
+   Invoices, credit notes and debit notes start as drafts and can be edited freely. Once issued
+   they can't be edited or deleted: only payment status, emailing and voiding remain, and any
+   correction is made with a credit / debit note. The database enforces the same rule
+   (supabase_lock_setup.sql), so it holds even outside this app. */
+const LOCK_TYPES={invoice:'invoices','credit-note':'creditNotes','debit-note':'debitNotes'};
+const isLockedRec=(type,rec)=>!!LOCK_TYPES[type]&&!!rec&&!!rec.status&&rec.status!=='draft';
+// Counts in totals, statements and reports (drafts and voided documents don't)
+const isIssued=d=>!!d&&!!d.status&&!['draft','cancelled','rejected'].includes(d.status);
+function currentDocRec(){ return EDIT_ID&&EDIT_ID!=='new'?(DB[DOC_COLL[DOC_TYPE]]||[]).find(x=>x.id===EDIT_ID):null; }
+const isLockedDoc=()=>isLockedRec(DOC_TYPE,currentDocRec());
+function confirmIssue(){
+  return confirm(`Issue this ${DOC_NAME[DOC_TYPE]||'document'}?\n\nOnce issued it is locked: it can't be edited or deleted. `
+    +`Corrections are made with a credit or debit note${DOC_TYPE==='invoice'?', or by voiding it':''}.`);
+}
+function markIssued(rec){ rec.issuedAt=new Date().toISOString(); rec.issuedBy=whoAmI(); }
+
+// Void: keeps the number (no gaps), stops it counting anywhere
+function voidDoc(type,id){
+  const rec=(DB[LOCK_TYPES[type]]||[]).find(x=>x.id===id); if(!rec||rec.status==='cancelled') return;
+  if(rec.status==='paid'){ toast('This invoice is paid — mark it unpaid first, or issue a credit note',false); return; }
+  const reason=prompt(`Void ${id}?\n\nIt keeps its number but no longer counts as owed. This can't be undone.\n\nReason:`);
+  if(reason===null) return;
+  if(!reason.trim()){ toast('A reason is needed to void a document',false); return; }
+  rec.status='cancelled'; delete rec.autoPrevStatus;
+  rec.voidReason=reason.trim(); rec.voidedAt=new Date().toISOString(); rec.voidedBy=whoAmI();
+  touch(rec,'voided — '+reason.trim());
+  if(type==='invoice') unlinkSources(rec);
+  saveDB(); toast(`${id} voided`); render();
+}
+// Correct an issued invoice: start a credit note (copy of its lines, to trim) or a debit note
+function fromINVtoNote(invId,type){
+  const inv=DB.invoices.find(x=>x.id===invId); if(!inv) return;
+  const isCN=type==='credit-note';
+  DOC_TYPE=type; EDIT_ID='new'; DOC_TAB='edit'; PROD_PICKER_IDX=-1;
+  LINE_ITEMS=isCN&&inv.lines&&inv.lines.length?inv.lines.map(l=>({...l}))
+    :[{desc:`${isCN?'Credit':'Additional charge'} — invoice ${invId}`,qty:1,unit:'lot',unitPrice:0}];
+  FORM={partyType:'client',clientId:inv.clientId,date:today(),ref:invId,currency:inv.currency||CO.currency,
+    attn:inv.attn||'',notes:`${isCN?'Credit':'Debit'} note for invoice ${invId}`,status:'draft',
+    docGstOn:inv.docGstOn,docGstRate:inv.docGstRate};
+  nav(type); setTimeout(()=>{DOC_TYPE=type;EDIT_ID='new';render();},10);
+}
+
+// Lock bar + audit line on top of an open document; an issued one becomes read-only
+function decorateDocForm(){
+  const rec=currentDocRec(); if(!rec) return;
+  const C=document.getElementById('content'), e=escAttr, locked=isLockedDoc();
+  const isInv=DOC_TYPE==='invoice', id=rec.id;
+  const hist=(rec.history||[]).slice().reverse();
+  const bar=document.createElement('div'); bar.className='doc-infobar';
+  bar.style.cssText=`border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:12px;border:1px solid ${locked?'#fcd34d':'var(--border)'};background:${locked?'var(--warning-bg)':'var(--card)'}`;
+  bar.innerHTML=`${locked?`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--warning-tx)">
+      <div style="flex:1;min-width:220px">${rec.status==='cancelled'
+        ?`<strong>🚫 Voided</strong>${rec.voidedAt?` ${fmtWhen(rec.voidedAt)} by ${e(rec.voidedBy)}`:''}${rec.voidReason?` — “${e(rec.voidReason)}”`:''}. Kept for the record; it no longer counts.`
+        :`<strong>🔒 Issued — locked.</strong>${rec.issuedAt?` Issued ${fmtWhen(rec.issuedAt)} by ${e(rec.issuedBy)}.`:''} It can't be edited or deleted; correct it with a credit or debit note${isInv?' or void it':''}.`}</div>
+      ${rec.status!=='cancelled'?`<div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${isInv?`<button class="btn btn-sm" onclick="fromINVtoNote('${id}','credit-note')">+ Credit note</button>
+        <button class="btn btn-sm" onclick="fromINVtoNote('${id}','debit-note')">+ Debit note</button>`:''}
+        ${rec.status!=='paid'?`<button class="btn btn-sm btn-danger" onclick="voidDoc('${DOC_TYPE}','${id}')">Void</button>`:''}
+      </div>`:''}
+    </div>`:''}
+    <div style="color:var(--muted);${locked?'margin-top:6px':''}">${rec.createdAt?`Created ${fmtWhen(rec.createdAt)} by ${e(rec.createdBy)}`:'Created before tracking began'}${rec.updatedAt?` · Last edited ${fmtWhen(rec.updatedAt)} by ${e(rec.updatedBy)}`:''}
+      ${hist.length?`<details style="margin-top:4px"><summary style="cursor:pointer">History (${hist.length})</summary>
+        <div style="margin-top:4px;line-height:1.7">${hist.map(h=>`${fmtWhen(h.at)} — ${e(h.by)}: ${e(h.action)}`).join('<br>')}</div></details>`:''}</div>`;
+  C.prepend(bar);
+  if(!locked||DOC_TAB==='preview') return;
+  C.querySelectorAll('input,select,textarea').forEach(el=>{ if(!el.closest('.doc-infobar')) el.disabled=true; });
+  C.querySelectorAll('button').forEach(b=>{ if(/saveDoc|addLine|remLine|togglePicker|runAI|setDocGst|onGstOverride/.test(b.getAttribute('onclick')||'')) b.style.display='none'; });
+  const ai=C.querySelector('.ai-box'); if(ai) ai.style.display='none';
+}
+async function saveDocInner(opts){
+  const issuing=!!(opts&&opts.issue);
+  if(isLockedDoc()){ toast('This document is issued and locked — correct it with a credit / debit note',false); return; }
   // ── CREDIT NOTE / DEBIT NOTE ──
   if(DOC_TYPE==='credit-note'||DOC_TYPE==='debit-note'){
     const isCN=DOC_TYPE==='credit-note';
     const isC=FORM.partyType!=='supplier';
     if(isC && !FORM.clientId){ toast('Select a client',false); return; }
     if(!isC && !FORM.supplierId){ toast('Select a supplier',false); return; }
+    if(issuing&&!confirmIssue()) return;
     const sub=LINE_ITEMS.reduce((s,l)=>s+(l.qty*l.unitPrice),0);
     const gstOnEl=document.getElementById('f-gst-on'); if(gstOnEl) FORM.docGstOn=gstOnEl.value==='yes';
     const gstRateEl=document.getElementById('f-gst-rate'); if(gstRateEl&&FORM.docGstOn!==undefined) FORM.docGstRate=parseFloat(gstRateEl.value)||0;
@@ -2650,14 +2762,16 @@ async function saveDocInner(){
     const docId=isNew?await allocDocNo(pfxKey,key):EDIT_ID;
     const existingRec=isNew?null:DB[key].find(x=>x.id===EDIT_ID);
     const rec={id:docId,partyType:isC?'client':'supplier',date:dateV,ref:refV,currency:cur,notes:notesV,attn:FORM.attn,
-      status:existingRec?existingRec.status:statV,
+      status:issuing?'issued':(existingRec?existingRec.status:'draft'),
       lines:LINE_ITEMS.map(l=>({...l})),amount:Math.round(tot*100)/100,
       docGstOn:FORM.docGstOn,docGstRate:FORM.docGstRate};
     if(isC) rec.clientId=FORM.clientId; else rec.supplierId=FORM.supplierId;
     keepMeta(rec,existingRec);
+    if(issuing) markIssued(rec);
+    touch(rec,isNew?(issuing?'created and issued':'created as draft'):(issuing?'issued':'edited'),isNew);
     if(isNew) DB[key].push(rec);
     else { const idx=DB[key].findIndex(x=>x.id===EDIT_ID); if(idx>=0)DB[key][idx]=rec; }
-    saveDB(); pills(); DOC_TYPE=null; toast(`${isCN?'Credit':'Debit'} note saved`); render(); return;
+    saveDB(); pills(); DOC_TYPE=null; toast(`${isCN?'Credit':'Debit'} note ${issuing?'issued':'saved as draft'}`); render(); return;
   }
 
   // ── SUPPLIER DO (no line items, special fields) ──
@@ -2676,6 +2790,7 @@ async function saveDocInner(){
     const rec={id:docId,supplierId:FORM.supplierId,date:dateV,receivedDate:recdV,ref:refV,sinvRef:sinvV,
       items:itemsV,notes:notesV,attn:FORM.attn,receivedBy:recbyV,status:statV};
     if(!isNew) keepMeta(rec,DB.supDOs.find(x=>x.id===EDIT_ID));
+    touch(rec,isNew?'created':'edited',isNew);
     if(isNew) DB.supDOs.push(rec);
     else { const idx=DB.supDOs.findIndex(x=>x.id===EDIT_ID); if(idx>=0)DB.supDOs[idx]=rec; }
     saveDB(); pills(); DOC_TYPE=null; toast('Goods received saved'); render(); return;
@@ -2704,6 +2819,7 @@ async function saveDocInner(){
       lines:LINE_ITEMS.map(l=>({...l})),amount:Math.round(tot*100)/100,
       docGstOn:FORM.docGstOn,docGstRate:FORM.docGstRate};
     if(!isNew) keepMeta(rec,DB.supInvoices.find(x=>x.id===EDIT_ID));
+    touch(rec,isNew?'created':'edited',isNew);
     if(isNew) DB.supInvoices.push(rec);
     else { const idx=DB.supInvoices.findIndex(x=>x.id===EDIT_ID); if(idx>=0)DB.supInvoices[idx]=rec; }
     saveDB(); pills(); DOC_TYPE=null; toast('Purchase invoice saved'); render(); return;
@@ -2715,6 +2831,7 @@ async function saveDocInner(){
   const pid=isC?FORM.clientId:FORM.supplierId;
   if(!pid){ toast(isC?'Select a client':'Select a supplier',false); return; }
   if(!confirmNoDuplicate()) return;
+  if(issuing&&!confirmIssue()) return;
   const sub=LINE_ITEMS.reduce((s,l)=>s+(l.qty*l.unitPrice),0);
   const gstOnEl=document.getElementById('f-gst-on'); if(gstOnEl) FORM.docGstOn=gstOnEl.value==='yes';
   const gstRateEl=document.getElementById('f-gst-rate'); if(gstRateEl&&FORM.docGstOn!==undefined) FORM.docGstRate=parseFloat(gstRateEl.value)||0;
@@ -2768,7 +2885,7 @@ async function saveDocInner(){
     }
   }
   if(DOC_TYPE==='quotation'){rec.valid=validV;rec.status=existingRec?existingRec.status:'draft';}
-  if(DOC_TYPE==='invoice')  {rec.due=validV;rec.status=existingRec?existingRec.status:'pending';
+  if(DOC_TYPE==='invoice')  {rec.due=validV;rec.status=issuing?'pending':(existingRec?existingRec.status:'draft');
     if(isNew&&FORM.srcQtId) rec.srcQtId=FORM.srcQtId;
     if(isNew&&FORM.srcSoId) rec.srcSoId=FORM.srcSoId;}
   if(DOC_TYPE==='po')       {rec.status=existingRec?existingRec.status:'pending';}
@@ -2786,10 +2903,13 @@ async function saveDocInner(){
     if(isNew && FORM.srcQtId) rec.srcQtId=FORM.srcQtId;
   }
   keepMeta(rec,existingRec);
+  if(issuing) markIssued(rec);
+  touch(rec,isNew?(issuing?'created and issued':DOC_TYPE==='invoice'?'created as draft':'created'):(issuing?'issued':'edited'),isNew);
   if(isNew) DB[key].push(rec);
   else { const idx=DB[key].findIndex(x=>x.id===EDIT_ID); if(idx>=0)DB[key][idx]=rec; }
   if(isNew) linkSources(rec);
-  saveDB(); DOC_TYPE=null; toast('Document saved'); render();
+  const msg=issuing?`${docId} issued`:LOCK_TYPES[DOC_TYPE]&&rec.status==='draft'?'Draft saved':'Document saved';
+  saveDB(); DOC_TYPE=null; toast(msg); render();
 }
 
 /* ═══════════════════════════════════════════════
@@ -3541,7 +3661,7 @@ function renderSupInvoiceForm(){
           ${EDIT_ID==='new'?`SINV-${String((CO.counter.supInvoice||0)+1).padStart(4,'0')}`:EDIT_ID}
         </div>
       </div>
-      <div>${EDIT_ID==='new'?'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">NEW</span>':'<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">EDITING</span>'}</div>
+      <div>${EDIT_ID==='new'?'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">NEW</span>':(isLockedDoc()?'<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">🔒 LOCKED</span>':'<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">EDITING</span>')}</div>
     </div>
     <div class="frow c3">
       <div class="fgrp"><label>Invoice date *</label><input type="date" id="f-date" value="${FORM.date||today()}" oninput="FORM.date=this.value"/></div>
@@ -3724,7 +3844,7 @@ function renderSupDOForm(){
           ${EDIT_ID==='new'?`SDO-${String((CO.counter.supDO||0)+1).padStart(4,'0')}`:EDIT_ID}
         </div>
       </div>
-      <div>${EDIT_ID==='new'?'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">NEW</span>':'<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">EDITING</span>'}</div>
+      <div>${EDIT_ID==='new'?'<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">NEW</span>':(isLockedDoc()?'<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">🔒 LOCKED</span>':'<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">EDITING</span>')}</div>
     </div>
     <div class="frow c2">
       <div class="fgrp"><label>Delivery date (on DO)</label><input type="date" id="f-date" value="${FORM.date||today()}" oninput="FORM.date=this.value"/></div>
@@ -3803,11 +3923,8 @@ function renderCreditDebitForm(){
     </div>
     <div class="frow c2">
       <div class="fgrp"><label>Status</label>
-        <select id="f-status">
-          <option value="draft" ${(FORM.status||'draft')==='draft'?'selected':''}>Draft</option>
-          <option value="issued" ${FORM.status==='issued'?'selected':''}>Issued</option>
-          <option value="cancelled" ${FORM.status==='cancelled'?'selected':''}>Cancelled</option>
-        </select>
+        <div style="padding:8px 0"><span class="badge b-${FORM.status||'draft'}">${FORM.status==='cancelled'?'voided':FORM.status||'draft'}</span>
+          <span class="field-hint">${(FORM.status||'draft')==='draft'?' Use “Save & issue” when it is final.':''}</span></div>
       </div>
       <div class="fgrp"><label>Attention to</label><input value="${FORM.attn||''}" oninput="FORM.attn=this.value"/></div>
     </div>
@@ -3833,7 +3950,8 @@ function renderCreditDebitForm(){
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:28px">
     <button class="btn" onclick="DOC_TYPE=null;render()">Cancel</button>
     <button class="btn" onclick="DOC_TAB='preview';render()">Preview</button>
-    <button class="btn btn-navy" onclick="saveDoc()">Save ${isCN?'Credit':'Debit'} Note</button>
+    <button class="btn" onclick="saveDoc()">Save draft</button>
+    <button class="btn btn-navy" onclick="saveDoc({issue:true})">✓ Save &amp; issue ${isCN?'credit':'debit'} note</button>
   </div>`}`;
 }
 
@@ -4072,6 +4190,7 @@ function openEmailDialog(){
   const area=document.getElementById('print-area');
   const rec=(DB[DOC_COLL[DOC_TYPE]]||[]).find(x=>x.id===EDIT_ID);
   if(!area||!rec){ toast('Open the saved document preview first',false); return; }
+  if(LOCK_TYPES[DOC_TYPE]&&rec.status==='draft'){ toast('Issue this document before emailing it',false); return; }
   const party=docParty(rec);
   const filename=`${rec.id}${party.name?' - '+party.name:''}.pdf`.replace(/[\\/:*?"<>|]/g,'_');
   EMAIL_JOB={rec, docType:DOC_TYPE, filename, pdf:docPdfBase64(area.innerHTML,filename)};
@@ -4112,6 +4231,7 @@ async function sendDocEmail(){
     // Log it on the document; a draft quotation that has been emailed is now "sent"
     const rec=(DB[DOC_COLL[job.docType]]||[]).find(x=>x.id===job.rec.id)||job.rec;
     rec.emailLog=[...(rec.emailLog||[]),{at:new Date().toISOString(),to,by:AUTH_USER&&AUTH_USER.email}];
+    touch(rec,'emailed to '+to);
     if(job.docType==='quotation'&&rec.status==='draft') rec.status='sent';
     saveDB(); closeEmailDialog(); toast(`Emailed to ${to}`); render();
   }catch(e){ st.textContent='⚠ '+e.message; btn.disabled=false; }
@@ -4981,6 +5101,8 @@ function openSOAModal(){ openModal('soa', null); }
 ═══════════════════════════════════════════════ */
 function markInvoicePaid(invId){
   const inv = DB.invoices.find(x=>x.id===invId); if(!inv) return;
+  if(inv.status==='draft'){ toast('Issue the invoice before recording a payment',false); return; }
+  if(inv.status==='cancelled'){ toast('This invoice is voided',false); return; }
   // Show payment modal
   MODAL = {type:'payment', id:invId};
   render();
@@ -4993,6 +5115,7 @@ function markInvoiceUnpaid(invId){
   inv.paidDate  = '';
   inv.paidRef   = '';
   inv.paidNote  = '';
+  touch(inv,'marked unpaid');
   saveDB(); toast('Invoice marked as unpaid'); render();
 }
 
@@ -5071,6 +5194,7 @@ function confirmPayment(invId){
   inv.paidMethod = method;
   inv.paidAmount = amount;
   inv.paidNote = note;
+  touch(inv,`payment recorded: ${fmt(amount,inv.currency)} on ${date}${method?' by '+method:''}${ref?' (ref '+ref+')':''}`);
 
   saveDB();
   MODAL = null;
@@ -5152,7 +5276,7 @@ function getSOAData(){
   const inPeriod = d => { const dt=d.date||''; return (!from||dt>=from) && (!to||dt<=to); };
 
   // Invoices for this client in period
-  const invoices = DB.invoices.filter(d=>d.clientId===cid && inPeriod(d));
+  const invoices = DB.invoices.filter(d=>isIssued(d) && d.clientId===cid && inPeriod(d));
   const invRows = invoices.map(d=>{
     const origAmt = d.amount||0;
     const dispAmt = curV==='base' ? toBase(origAmt,d.currency) : origAmt;
@@ -5168,7 +5292,7 @@ function getSOAData(){
   });
 
   // Credit Notes for this client in period — reduce the balance, like a payment
-  const cnRows = DB.creditNotes.filter(d=>d.partyType!=='supplier' && d.clientId===cid && inPeriod(d)).map(d=>{
+  const cnRows = DB.creditNotes.filter(d=>isIssued(d) && d.partyType!=='supplier' && d.clientId===cid && inPeriod(d)).map(d=>{
     const origAmt = d.amount||0;
     const dispAmt = curV==='base' ? toBase(origAmt,d.currency) : origAmt;
     const dispCur  = curV==='base' ? base : d.currency;
@@ -5177,7 +5301,7 @@ function getSOAData(){
   });
 
   // Debit Notes for this client in period — increase the balance, like an invoice
-  const dnRows = DB.debitNotes.filter(d=>d.partyType!=='supplier' && d.clientId===cid && inPeriod(d)).map(d=>{
+  const dnRows = DB.debitNotes.filter(d=>isIssued(d) && d.partyType!=='supplier' && d.clientId===cid && inPeriod(d)).map(d=>{
     const origAmt = d.amount||0;
     const dispAmt = curV==='base' ? toBase(origAmt,d.currency) : origAmt;
     const dispCur  = curV==='base' ? base : d.currency;

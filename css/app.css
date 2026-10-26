@@ -312,3 +312,71 @@ input[type=number]{-moz-appearance:textfield}
   .stat-val{font-size:18px}
 }
 .info-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;background:var(--warning-bg);color:var(--warning-tx);padding:4px 10px;border-radius:6px;margin-bottom:10px}
+
+/* ── PHONES: readable tables, line items and documents (≤600px) ──────────────
+   Tables get class "stack" and per-cell data-label from js/core.js labelTables(). */
+#phone-summary{display:none}
+@media(max-width:600px){
+  /* Lists → one card per row, "LABEL   value" lines */
+  .tbl-wrap{overflow-x:visible}
+  table.stack{min-width:0;table-layout:auto}
+  table.stack thead{display:none}
+  table.stack,table.stack tbody,table.stack tr,table.stack td{display:block;width:auto!important}
+  table.stack tr{padding:10px 14px;border-bottom:1px solid var(--border)}
+  table.stack tbody tr:last-child{border-bottom:none}
+  table.stack td{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:3px 0!important;border:none!important;
+    white-space:normal!important;overflow:visible!important;text-overflow:clip!important;text-align:right;overflow-wrap:anywhere;min-height:0}
+  table.stack td::before{content:attr(data-label);flex-shrink:0;text-align:left;font-size:11px;font-weight:600;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.4px;padding-top:2px}
+  table.stack td[data-label=""]::before{display:none}
+  table.stack td[data-label=""]{justify-content:flex-end;flex-wrap:wrap;gap:4px 14px;padding-top:6px!important}
+  table.stack td:first-child{font-weight:600;color:var(--text)}
+  table.stack td:first-child.mono{font-size:13px}
+  table.stack td>div[style*="display:flex"],table.stack .dash-acts{flex-wrap:wrap;justify-content:flex-end}
+  /* Top bar: drop the email address, let the title shorten, keep the action button visible */
+  #user-email{display:none!important}
+  #topbar{gap:8px}
+  .tb-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+  #topbar>div:last-child{gap:6px!important;min-width:0}
+  #topbar .btn{white-space:nowrap}
+  /* Bigger tap targets for text links */
+  .alink{padding:6px 2px;font-size:13px}
+  .btn{min-height:38px}
+  .btn-sm{min-height:34px}
+
+  /* Line items → one card per item: description on top, qty / unit / price below */
+  .line-tbl{min-width:0;table-layout:auto;border:none;overflow:visible}
+  .line-tbl thead{display:none}
+  .line-tbl tbody{display:block}
+  .line-tbl tr{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px 8px;padding:10px;margin-bottom:10px;
+    border:1px solid var(--border-str);border-radius:10px;background:var(--card)!important}
+  .line-tbl td{display:block;border:none!important;padding:0!important;text-align:left!important}
+  .line-tbl td:nth-child(1){grid-column:1/3;font-size:12px}
+  .line-tbl td:nth-child(1)::before{content:'Item '}
+  .line-tbl td:nth-child(2){grid-column:1/-1;grid-row:2}
+  .line-tbl td:nth-child(7){grid-column:3;grid-row:1;text-align:right!important}
+  .line-tbl td:nth-child(3)::before,.line-tbl td:nth-child(4)::before,.line-tbl td:nth-child(5)::before,.line-tbl td:nth-child(6)::before{
+    display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+  .line-tbl td:nth-child(3)::before{content:'Qty'}
+  .line-tbl td:nth-child(4)::before{content:'Unit'}
+  .line-tbl td:nth-child(5)::before{content:'Unit price'}
+  .line-tbl td:nth-child(6){grid-column:1/-1;font-size:14px!important;padding-top:4px!important;border-top:1px dashed var(--border)!important}
+  .line-tbl td:nth-child(6)::before{content:'Amount';display:inline;margin-right:8px}
+  .line-tbl input,.line-tbl select,.line-tbl textarea.line-desc{width:100%!important;font-size:15px;padding:8px}
+  .line-tbl td:nth-child(7) button{font-size:20px!important;padding:4px 8px!important}
+
+  /* Document preview: paper layout shrunk to fit (js/core.js fitPreview), summary card on top */
+  #print-area table{min-width:0}
+  #phone-summary{display:block;margin-bottom:12px}
+  /* Rows of buttons (preview actions, form footers) wrap instead of running off screen */
+  div[style*="justify-content:flex-end"]{flex-wrap:wrap}
+
+  /* Totals box under line items */
+  .totals{width:100%;margin-left:0}
+  /* Modals use the full width */
+  .overlay{padding:8px!important;align-items:flex-start!important;overflow-y:auto}
+  .modal{width:100%!important;max-width:100%!important;max-height:none!important}
+}
+
+/* Notes boxes on document forms fill the panel */
+.panel>textarea{width:100%;min-height:70px;padding:8px 10px;border:1px solid var(--border-str);border-radius:var(--radius);background:var(--input);color:var(--text);font-family:inherit;font-size:13px;resize:vertical}

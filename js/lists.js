@@ -158,7 +158,7 @@ const matches=(q,...fields)=>!q||fields.some(f=>String(f||'').toLowerCase().incl
 function onSearch(key,val){
   SEARCH[key]=val;
   const box=document.getElementById('search-results');
-  if(box) box.innerHTML=key==='products'?productResults():contactResults(key);
+  if(box){ box.innerHTML=key==='products'?productResults():contactResults(key); labelTables(box); }
 }
 /* ── VIEW SWITCH: Cards / Table / List, plus sort — remembered per page in this browser ── */
 let VIEW=(()=>{ try{ return JSON.parse(localStorage.getItem('mp_view')||'{}')||{}; }catch(e){ return {}; } })();
@@ -167,7 +167,7 @@ function setView(k,key,val){
   VIEW[key]=val;
   try{ localStorage.setItem('mp_view',JSON.stringify(VIEW)); }catch(e){}
   const box=document.getElementById('search-results');
-  if(box) box.innerHTML=k==='products'?productResults():contactResults(k);
+  if(box){ box.innerHTML=k==='products'?productResults():contactResults(k); labelTables(box); }
   document.querySelectorAll('.vseg button').forEach(b=>b.classList.toggle('on',b.dataset.v===viewOf(k)));
 }
 function viewBar(k){
@@ -612,7 +612,7 @@ function renderDocList(){
       if(f==='supplierId')return `<td>${sName(d[f])}</td>`;
       if(f==='status')    return `<td><span class="badge b-${d[f]}">${LOCK_TYPES[PAGE]&&d[f]==='cancelled'?'voided':d[f]}</span></td>`;
       if(f==='amount')    return `<td>${fmt(d[f],d.currency)}</td>`;
-      if(f==='id')        return `<td class="mono">${isLockedRec(PAGE,d)?'<span title="Issued — locked">🔒</span> ':''}${d[f]}</td>`;
+      if(f==='id')        return `<td class="mono"><span>${isLockedRec(PAGE,d)?'<span title="Issued — locked">🔒</span> ':''}${d[f]}</span></td>`;
       if(f==='_pay')      return `<td style="font-size:11px;color:var(--muted)">${d.status==='paid'?`<span style="color:var(--success-tx)">✓ ${d.paidDate||''}</span>${d.paidRef?' · '+d.paidRef:''}${d.paidMethod?' · '+d.paidMethod:''}` : '—'}</td>`;
       return `<td>${d[f]||'—'}</td>`;
     }).join('')}<td style="white-space:nowrap;display:flex;gap:8px;align-items:center">
@@ -786,7 +786,7 @@ function renderCreditDebitList(type){
   return `<div class="tbl-wrap"><table>
     <thead><tr><th>${isCN?'CN':'DN'} No.</th><th>Applies to</th><th>Party</th><th>Date</th><th>Reference</th><th>Amount</th><th>Status</th><th></th></tr></thead>
     <tbody>${rows.map(d=>`<tr>
-      <td class="mono">${isLockedRec(type,d)?'<span title="Issued — locked">🔒</span> ':''}${d.id}</td>
+      <td class="mono"><span>${isLockedRec(type,d)?'<span title="Issued — locked">🔒</span> ':''}${d.id}</span></td>
       <td>${d.partyType==='supplier'?'Supplier':'Client'}</td>
       <td>${d.partyType==='supplier'?sName(d.supplierId):cName(d.clientId)}</td>
       <td>${d.date}</td>

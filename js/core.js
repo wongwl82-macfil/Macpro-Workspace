@@ -736,8 +736,8 @@ function render(){
   const C=document.getElementById('content');
   const TA=document.getElementById('tb-acts');
   TA.innerHTML='';
-  if(MODAL)   { C.innerHTML=renderModal(); return; }
-  if(DOC_TYPE){ C.innerHTML=renderDocForm(); decorateDocForm(); return; }
+  if(MODAL)   { C.innerHTML=renderModal(); afterRender(); return; }
+  if(DOC_TYPE){ C.innerHTML=renderDocForm(); decorateDocForm(); afterRender(); return; }
   switch(PAGE){
     case 'dash':     C.innerHTML=renderDash(); break;
     case 'clients':  TA.innerHTML=`<button class="btn btn-gold" onclick="openModal('client','new')">+ Add client</button>`; C.innerHTML=renderContacts('clients'); break;
@@ -756,5 +756,75 @@ function render(){
       C.innerHTML=renderDocList();
     }
   }
+  afterRender();
+}
+
+/* ── PHONES (screens up to 600px wide) ──
+   Tables turn into stacked cards, each value labelled with its column heading (css/app.css,
+   "table.stack"). A document preview is laid out at paper width and shrunk to fit the screen,
+   with a large-print summary of the key facts on top. Desktop is unchanged. */
+const isPhone=()=>window.matchMedia('(max-width:600px)').matches;
+function afterRender(){ labelTables(); phoneSummary(); fitPreview(); }
+// Copy each column heading onto its cells (data-label) so a phone can show "Due date  2026-11-25"
+function labelTables(root){
+  (root||document.getElementById('content')).querySelectorAll('table').forEach(t=>{
+    if(t.closest('#print-area')||t.classList.contains('line-tbl')) return;
+    const heads=[...t.querySelectorAll(':scope > thead > tr > th')].map(th=>th.textContent.trim());
+    if(!heads.length) return;
+    t.classList.add('stack');
+    t.querySelectorAll(':scope > tbody > tr').forEach(tr=>{
+      let i=0;
+      [...tr.children].forEach(td=>{ const span=+td.getAttribute('colspan')||1; td.setAttribute('data-label',span>1?'':(heads[i]||'')); i+=span; });
+    });
+  });
+}
+// Shrink the paper-width document to the phone's width (Print / PDF / email use their own layout)
+function fitPreview(){
+  const a=document.getElementById('print-area'); if(!a) return;
+  a.style.zoom=''; a.style.width=''; a.style.minWidth='';
+  if(!isPhone()) return;
+  const box=a.parentElement, cs=getComputedStyle(box);
+  const avail=box.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+  a.style.width='740px'; a.style.minWidth='740px';
+  if(avail>0&&avail<740) a.style.zoom=(avail/740).toFixed(3);
+}
+window.addEventListener('resize',()=>fitPreview());
+// Some tables are filled in after the page is drawn (report / statement previews, search results):
+// label those too, as soon as they appear
+let _labelQueued=false;
+new MutationObserver(()=>{ if(_labelQueued) return; _labelQueued=true;
+  setTimeout(()=>{ _labelQueued=false; labelTables(); },0); })
+  .observe(document.getElementById('content'),{childList:true,subtree:true});
+// Big, readable summary above a document preview on phones: who, when, status, items, total
+function phoneSummary(){
+  const a=document.getElementById('print-area'); if(!a||!DOC_TYPE||DOC_TAB!=='preview') return;
+  const e=escAttr, rec=currentDocRec();
+  const isSup=['po','sup-invoice','sup-do'].includes(DOC_TYPE)||FORM.partyType==='supplier';
+  const party=(isSup?DB.suppliers.find(s=>s.id===FORM.supplierId):DB.clients.find(c=>c.id===FORM.clientId))||{};
+  const status=(rec&&rec.status)||FORM.status||'';
+  const cur=FORM.currency||CO.currency, sub=LINE_ITEMS.reduce((s,l)=>s+(+l.qty||0)*(+l.unitPrice||0),0);
+  const money=!['do','sup-do'].includes(DOC_TYPE);
+  const dates=[FORM.date&&`Date ${FORM.date}`,
+    ['invoice','sup-invoice'].includes(DOC_TYPE)&&FORM.due&&`Due ${FORM.due}`,
+    DOC_TYPE==='quotation'&&FORM.valid&&`Valid to ${FORM.valid}`].filter(Boolean).join(' · ');
+  const items=LINE_ITEMS.filter(l=>(l.desc||'').trim()).map(l=>`<div style="display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--border)">
+      <span style="font-weight:700;white-space:nowrap">${e(l.qty)} ${e(l.unit||'')}</span>
+      <span style="flex:1;white-space:pre-line;overflow-wrap:anywhere">${e(l.desc)}</span>
+      ${money?`<span style="white-space:nowrap">${fmt((+l.qty||0)*(+l.unitPrice||0),cur)}</span>`:''}</div>`).join('')
+    ||(FORM.items?`<div style="padding:6px 0;border-top:1px solid var(--border);white-space:pre-line">${e(FORM.items)}</div>`:'');
+  const card=document.createElement('div'); card.id='phone-summary'; card.className='panel';
+  card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">${e(DOC_NAME[DOC_TYPE]||'Document')}</span>
+      ${status?`<span class="badge b-${e(status)}">${e(LOCK_TYPES[DOC_TYPE]&&status==='cancelled'?'voided':status)}</span>`:''}</div>
+    <div class="mono" style="font-size:17px;font-weight:700;color:var(--text);margin:2px 0 6px">${e(EDIT_ID==='new'?'New (not saved)':EDIT_ID)}</div>
+    <div style="font-size:15px;font-weight:600">${e(party.name||'—')}</div>
+    ${FORM.attn?`<div class="field-hint">Attn: ${e(FORM.attn)}</div>`:''}
+    ${dates?`<div class="field-hint" style="margin-top:2px">${e(dates)}</div>`:''}
+    ${FORM.deliveryAddr||(DOC_TYPE==='do'&&party.addr)?`<div class="field-hint" style="white-space:pre-line">Deliver to: ${e(FORM.deliveryAddr||party.addr)}</div>`:''}
+    <div style="margin-top:10px;font-size:13px">${items}</div>
+    ${money?`<div style="display:flex;justify-content:space-between;border-top:2px solid var(--border-str);margin-top:4px;padding-top:8px;font-size:16px;font-weight:700">
+      <span>Total</span><span>${fmt(sub+calcGST(sub),cur)}</span></div>`:''}
+    <div class="field-hint" style="margin-top:8px">The full document is below — pinch to zoom.</div>`;
+  a.before(card);
 }
 

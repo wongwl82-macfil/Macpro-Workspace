@@ -63,7 +63,7 @@ function emailTemplate(rec,party){
   }[DOC_TYPE]||`Please find attached ${DOC_NAME[DOC_TYPE]||'document'} ${no}.`;
   return [`Dear ${rec.attn||party.contact||'Sir/Madam'},`,'',body,
     ...(rec.ref?[`Your reference: ${rec.ref}`]:[]),'','Please let us know if you have any questions.','',
-    'Best regards,',CO.signoff||'',CO.name,...(CO.tel?[`Tel: ${CO.tel}`]:[])].join('\n');
+    'Best regards,',rec.pic||CO.signoff||'',CO.name,...(rec.pic&&rec.picTel?[`Mobile: ${rec.picTel}`]:[]),...(CO.tel?[`Tel: ${CO.tel}`]:[])].join('\n');
 }
 
 // PDF of the preview on screen, as base64. html2pdf is loaded only the first time it's needed.

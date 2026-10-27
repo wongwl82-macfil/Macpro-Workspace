@@ -285,10 +285,24 @@ function renderSettingsPanel(){
       <div class="color-row"><div class="color-swatch" id="bc-sw" style="background:${esc(CO.brand)}"></div><span style="flex:1;font-size:13px">Primary / header colour</span><input type="color" id="s-brand" value="${esc(CO.brand)}" oninput="document.getElementById('bc-sw').style.background=this.value" style="width:80px;height:32px;border:none;cursor:pointer;border-radius:6px"/></div>
       <div class="color-row"><div class="color-swatch" id="ac-sw" style="background:${esc(CO.accent)}"></div><span style="flex:1;font-size:13px">Accent / highlight colour</span><input type="color" id="s-accent" value="${esc(CO.accent)}" oninput="document.getElementById('ac-sw').style.background=this.value" style="width:80px;height:32px;border:none;cursor:pointer;border-radius:6px"/></div>
     </div>
+    <div class="panel"><h4>Letterhead logo</h4>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div style="width:170px;height:80px;border:1px dashed var(--border-str);border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden">
+          ${coLogo()?`<img src="${esc(coLogo())}" alt="Logo" style="max-width:150px;max-height:66px;object-fit:contain">`:'<span style="font-size:12px;color:#888">No logo</span>'}</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label class="btn btn-gold" style="cursor:pointer">Upload logo…<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onchange="uploadLogo(this)" style="display:none"/></label>
+          <div style="display:flex;gap:6px">
+            ${CO.logo!==undefined?'<button class="btn" onclick="setLogo(undefined)">Use built-in logo</button>':''}
+            ${coLogo()?'<button class="btn" onclick="setLogo(\'\')">Remove logo</button>':''}
+          </div>
+          <div style="font-size:11px;color:var(--muted)">PNG with a transparent background works best. Max 300 KB. Shown on quotations, orders, invoices, DOs, notes and statements.</div>
+        </div>
+      </div>
+    </div>
     <div class="panel"><h4>Document header preview</h4>
       <div style="border-radius:8px;overflow:hidden;border:1px solid var(--border)">
         <div style="background:${esc(CO.brand)};padding:14px 18px;display:flex;justify-content:space-between;align-items:center">
-          <div><div style="color:#fff;font-size:14px;font-weight:600">${esc(CO.name)}</div><div style="color:rgba(255,255,255,.5);font-size:11px">${esc(CO.addr.split('\n')[0])}</div></div>
+          <div style="${hdrLeft()}">${docLogo(true)}<div style="color:#fff;font-size:14px;font-weight:600">${esc(CO.name)}</div><div style="color:rgba(255,255,255,.5);font-size:11px">${esc(CO.addr.split('\n')[0])}</div></div>
           <div style="text-align:right"><div style="color:${esc(CO.accent)};font-size:16px;font-weight:700">Quotation</div><div style="color:rgba(255,255,255,.4);font-size:11px">${esc(fullPrefix('quotation'))}-XXXX</div></div>
         </div>
         <div style="background:#fff;padding:12px 18px;font-size:12px;color:#111">
@@ -413,6 +427,20 @@ function saveSetting(tab){
   render();
 }
 
+// Logo is stored inside the company settings as a data URL, so print windows, PDFs and emails can use it.
+function uploadLogo(input){
+  const f=input.files&&input.files[0]; if(!f) return;
+  if(!/^image\/(png|jpeg|webp|svg\+xml)$/.test(f.type)) return toast('Please choose a PNG, JPG, WEBP or SVG image',false);
+  if(f.size>300*1024) return toast('Logo is too large — please keep it under 300 KB',false);
+  const r=new FileReader();
+  r.onload=()=>setLogo(r.result);
+  r.onerror=()=>toast('Could not read that file',false);
+  r.readAsDataURL(f);
+}
+function setLogo(v){
+  if(v===undefined) delete CO.logo; else CO.logo=v;
+  saveCO(); toast(v===''?'Logo removed':'Logo updated'); render();
+}
 function addBank(){ CO.banks.push({id:'b'+Date.now(),bank:'',accName:CO.name,accNo:'',swift:'',branch:'',currency:CO.currency}); render(); }
 function saveFxRate(currency){
   const el=document.getElementById('fx-rate-'+currency); if(!el) return;

@@ -928,7 +928,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
 
       <!-- ① HEADER BAR -->
       <div style="background:${esc(CO.brand)};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
+        <div style="${hdrLeft()}">${docLogo(true)}
           <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${esc(CO.name)}</div>
           <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${esc(CO.addr)}</div>
           <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${esc(CO.tel)}</div>
@@ -1033,7 +1033,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
       <!-- ⑥ SIGN-OFF -->
       <div style="padding:10px 24px 8px;font-size:12px">
         Best Regards<br><br>
-        <strong>${esc(CO.signoff||'Wong WL')} / Mobile : ${esc(CO.tel)}</strong>
+        <strong>${esc(FORM.pic||CO.signoff||'Wong WL')} / Mobile : ${esc(FORM.pic?(FORM.picTel||'—'):CO.tel)}</strong>
       </div>
 
       <!-- ⑦ DISCLAIMER -->
@@ -1054,7 +1054,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
 
       <!-- ① HEADER BAR -->
       <div style="background:${esc(CO.brand)};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
+        <div style="${hdrLeft()}">${docLogo(true)}
           <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${esc(CO.name)}</div>
           <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${esc(CO.addr)}</div>
           <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${esc(CO.tel)}</div>
@@ -1166,7 +1166,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
 
       <!-- ① HEADER BAR -->
       <div style="background:${esc(CO.brand)};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
+        <div style="${hdrLeft()}">${docLogo(true)}
           <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${esc(CO.name)}</div>
           <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${esc(CO.addr)}</div>
           <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${esc(CO.tel)}</div>
@@ -1292,7 +1292,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
 
       <!-- ① HEADER BAR -->
       <div style="background:${esc(CO.brand)};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
+        <div style="${hdrLeft()}">${docLogo(true)}
           <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${esc(CO.name)}</div>
           <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${esc(CO.addr)}</div>
           <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${esc(CO.tel)}</div>
@@ -1392,7 +1392,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
 
       <!-- ① HEADER BAR -->
       <div style="background:${esc(CO.brand)};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
+        <div style="${hdrLeft()}">${docLogo(true)}
           <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${esc(CO.name)} (${esc(CO.uen)})</div>
           <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${esc(CO.addr)}</div>
           <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${esc(CO.tel)}</div>
@@ -1513,7 +1513,7 @@ function renderPreview(label,cur,sub,gst,tot,party){
   </div>
   <div class="preview-doc" id="print-area" style="border-top:4px solid ${esc(CO.brand)}">
     <div class="prev-hdr">
-      <div>
+      <div style="${hdrLeft()}">${docLogo(false)}
         <div style="font-size:15px;font-weight:700;color:${esc(CO.brand)}">${esc(CO.name)}</div>
         <div style="font-size:11px;color:#555;white-space:pre-line;margin-top:3px">${esc(CO.addr)}</div>
         <div style="font-size:11px;color:#555">Tel: ${esc(CO.tel)}${esc(CO.fax?' · Fax: '+CO.fax:'')}</div>
@@ -1760,7 +1760,7 @@ function renderSupInvoicePreview(cur,sub,gst,tot,party){
   </div>
   <div class="preview-doc" id="print-area" style="border-top:4px solid ${esc(CO.brand)}">
     <div class="prev-hdr">
-      <div>
+      <div style="${hdrLeft()}">${docLogo(false)}
         <div style="font-size:15px;font-weight:700;color:${esc(CO.brand)}">${esc(CO.name)}</div>
         <div style="font-size:11px;color:#555;white-space:pre-line;margin-top:3px">${esc(CO.addr)}</div>
         <div style="font-size:11px;color:#555">Tel: ${esc(CO.tel)} · ${esc(CO.email)}</div>
@@ -1960,7 +1960,7 @@ function renderCreditDebitPreview(isCN,cur,sub,gst,tot,party){
   </div>
   <div class="preview-doc" id="print-area" style="padding:0;max-width:740px;font-family:Arial,sans-serif;font-size:12px">
     <div style="background:${esc(CO.brand)};padding:14px 24px 12px;display:flex;justify-content:space-between;align-items:flex-start">
-      <div>
+      <div style="${hdrLeft()}">${docLogo(true)}
         <div style="color:#fff;font-size:16px;font-weight:700;letter-spacing:.3px">${esc(CO.name)}</div>
         <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:4px;white-space:pre-line">${esc(CO.addr)}</div>
         <div style="color:rgba(255,255,255,.75);font-size:11px;margin-top:2px">Tel : ${esc(CO.tel)}</div>
@@ -2049,7 +2049,7 @@ function renderSupDOPreview(party){
   </div>
   <div class="preview-doc" id="print-area" style="border-top:4px solid ${esc(CO.brand)}">
     <div class="prev-hdr">
-      <div>
+      <div style="${hdrLeft()}">${docLogo(false)}
         <div style="font-size:15px;font-weight:700;color:${esc(CO.brand)}">${esc(CO.name)}</div>
         <div style="font-size:11px;color:#555;white-space:pre-line;margin-top:3px">${esc(CO.addr)}</div>
         <div style="font-size:11px;color:#555">Tel: ${esc(CO.tel)} · ${esc(CO.email)}</div>

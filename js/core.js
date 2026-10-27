@@ -715,6 +715,24 @@ function pills(){
   const psd=document.getElementById('pill-sdo');  if(psd) psd.textContent=DB.supDOs.length;
 }
 function sbName(){ const el=document.getElementById('sb-name'); if(el) el.textContent=CO.shortName||CO.name; }
+// Letterhead logo. CO.logo: undefined = built-in logo, '' = no logo, otherwise an uploaded data URL.
+function coLogo(){ return CO.logo===undefined ? (typeof DEFAULT_LOGO==='string'?DEFAULT_LOGO:'') : CO.logo; }
+// onDark: the coloured header bar. The built-in logo has a white version for it; an uploaded logo's
+// colours are unknown, so it sits on a white tile to stay visible.
+// In a letterhead the logo is column 1 of hdrLeft()'s grid and every text line flows into column 2.
+function docLogo(onDark,float){
+  let src=coLogo(); if(!src) return '';
+  const builtIn=CO.logo===undefined;
+  if(onDark&&builtIn&&typeof DEFAULT_LOGO_LIGHT==='string') src=DEFAULT_LOGO_LIGHT;
+  const img=`<img src="${esc(src)}" alt="${esc(CO.name)}" style="display:block;height:62px;width:auto;max-width:150px;object-fit:contain">`;
+  const place=float?'float:left;margin-right:14px':'grid-row:span 9;align-self:start';
+  return onDark&&!builtIn
+    ? `<div style="${place};background:#fff;border-radius:6px;padding:5px 8px">${img}</div>`
+    : `<div style="${place}">${img}</div>`;
+}
+function hdrLeft(){
+  return 'flex:1;min-width:0;padding-right:16px'+(coLogo()?';display:grid;grid-template-columns:auto 1fr;column-gap:14px;align-content:start':'');
+}
 
 /* ═══════════════════════════════════════════════
    NAV

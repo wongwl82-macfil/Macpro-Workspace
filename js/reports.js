@@ -692,8 +692,8 @@ function buildSOAHtml(){
   @media print{body{padding:8mm}@page{margin:8mm}}`;
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SOA — ${esc(cl?.name||'')}</title><style>${css}</style></head><body>
-  <h1>${esc(CO.name)}</h1>
-  <div class="sub">Statement of Account &nbsp;·&nbsp; Period: <strong>${from}</strong> to <strong>${to}</strong></div>
+  <div style="overflow:hidden;margin-bottom:10px">${docLogo(false,true)}<h1 style="padding-top:8px">${esc(CO.name)}</h1>
+  <div class="sub">Statement of Account &nbsp;·&nbsp; Period: <strong>${from}</strong> to <strong>${to}</strong></div></div>
   <div class="info">
     <strong>${esc(cl?.name||'—')}</strong>${cl?.tel?' &nbsp;·&nbsp; '+esc(cl.tel):''}${cl?.email?' &nbsp;·&nbsp; '+esc(cl.email):''}<br>
     ${esc(cl?.addr||'')}${cl?.contact?'<br>Attn: '+esc(cl.contact):''}

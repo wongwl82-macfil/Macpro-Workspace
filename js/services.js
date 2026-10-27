@@ -71,6 +71,7 @@ async function loadHtml2Pdf(){
   if(window.html2pdf) return;
   await new Promise((res,rej)=>{ const s=document.createElement('script');
     s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    s.integrity='sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=='; s.crossOrigin='anonymous';   // refuse a tampered copy
     s.onload=res; s.onerror=()=>rej(new Error('Could not load the PDF tool — check your internet connection')); document.head.appendChild(s); });
 }
 async function docPdfBase64(bodyHtml,filename){

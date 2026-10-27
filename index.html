@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Macpro Solutions — Document Hub</title>
-<link rel="stylesheet" href="css/app.css?v=20261026c">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="css/app.css?v=20261027a">
+<!-- integrity = fingerprint of this exact file; the browser refuses it if the CDN copy is ever changed.
+     If you upgrade the version, the hash must be updated too. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"
+  integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
 </head>
 <body>
 <div id="shell">
@@ -18,84 +21,84 @@
     <div class="sb-brand-sub">Pte Ltd · Document Hub</div>
   </div>
   <div class="sb-section">Overview</div>
-  <div class="sb-item on" onclick="nav('dash')" id="nav-dash">
+  <button type="button" class="sb-item on" onclick="nav('dash')" id="nav-dash">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard
-  </div>
+  </button>
   <div class="sb-section">Database</div>
-  <div class="sb-item" onclick="nav('clients')" id="nav-clients">
+  <button type="button" class="sb-item" onclick="nav('clients')" id="nav-clients">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
     Clients
-  </div>
-  <div class="sb-item" onclick="nav('suppliers')" id="nav-suppliers">
+  </button>
+  <button type="button" class="sb-item" onclick="nav('suppliers')" id="nav-suppliers">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
     Suppliers
-  </div>
-  <div class="sb-item" onclick="nav('products')" id="nav-products">
+  </button>
+  <button type="button" class="sb-item" onclick="nav('products')" id="nav-products">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
     Products
-  </div>
+  </button>
   <div class="sb-section">Sales</div>
-  <div class="sb-item" onclick="nav('quotation')" id="nav-quotation">
+  <button type="button" class="sb-item" onclick="nav('quotation')" id="nav-quotation">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
     Quotations
-  </div>
-  <div class="sb-item" onclick="nav('client-po')" id="nav-client-po">
+  </button>
+  <button type="button" class="sb-item" onclick="nav('client-po')" id="nav-client-po">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
     Sales Order
-  </div>
-  <div class="sb-item" onclick="nav('invoice')" id="nav-invoice">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-    Invoices
-  </div>
-  <div class="sb-item" onclick="nav('do')" id="nav-do">
+  </button>
+  <button type="button" class="sb-item" onclick="nav('do')" id="nav-do">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
     Delivery Orders
-  </div>
+  </button>
+  <button type="button" class="sb-item" onclick="nav('invoice')" id="nav-invoice">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+    Invoices
+  </button>
   <div class="sb-section">Procurement</div>
-  <div class="sb-item" onclick="nav('po')" id="nav-po">
+  <button type="button" class="sb-item" onclick="nav('po')" id="nav-po">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
     Purchase Orders
-  </div>
-  <div class="sb-item" onclick="nav('sup-invoice')" id="nav-sup-invoice">
+  </button>
+  <button type="button" class="sb-item" onclick="nav('sup-invoice')" id="nav-sup-invoice">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
     Purchase Invoices
-  </div>
-  <div class="sb-item" onclick="nav('sup-do')" id="nav-sup-do">
+  </button>
+  <button type="button" class="sb-item" onclick="nav('sup-do')" id="nav-sup-do">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
     Goods Received
-  </div>
+  </button>
   <div class="sb-section">Finance</div>
-  <div class="sb-item" onclick="nav('credit-note')" id="nav-credit-note">
+  <button type="button" class="sb-item" onclick="nav('credit-note')" id="nav-credit-note">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
     Credit Notes
-  </div>
-  <div class="sb-item" onclick="nav('debit-note')" id="nav-debit-note">
+  </button>
+  <button type="button" class="sb-item" onclick="nav('debit-note')" id="nav-debit-note">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="14" y2="15"/></svg>
     Debit Notes
-  </div>
+  </button>
   <div class="sb-section">Reports</div>
-  <div class="sb-item" onclick="nav('pnl')" id="nav-pnl">
+  <button type="button" class="sb-item" onclick="nav('pnl')" id="nav-pnl">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
     Project P&amp;L
-  </div>
-  <div class="sb-item" onclick="openReportModal()">
+  </button>
+  <button type="button" class="sb-item" onclick="openReportModal()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7m4 10v-6m4 6v-3"/></svg>
     Export Report
-  </div>
-  <div class="sb-item" onclick="openSOAModal()">
+  </button>
+  <button type="button" class="sb-item" onclick="openSOAModal()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg>
     Statement of Account
-  </div>
+  </button>
   <div class="sb-section">System</div>
-  <div class="sb-item" onclick="nav('settings')" id="nav-settings">
+  <button type="button" class="sb-item" onclick="nav('settings')" id="nav-settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     Company Settings
-  </div>
+  </button>
   <div class="sb-footer">
-    <div class="sb-item" onclick="toggleDark()" id="dark-btn">
+    <button type="button" class="sb-item" onclick="toggleDark()" id="dark-btn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
       Dark mode
-    </div>
+    </button>
   </div>
 </nav>
 
@@ -106,10 +109,10 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
     <div class="tb-title" id="page-title">Dashboard</div>
-    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-      <span id="sync-status" style="font-size:11px;color:var(--muted)">💾 Local only</span>
-      <span id="user-email" style="font-size:11px;color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-      <button onclick="doLogout()" title="Sign out" style="background:none;border:1px solid var(--border-str);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;font-family:inherit">Sign out</button>
+    <div class="tb-right">
+      <span id="sync-status" class="tb-meta">💾 Local only</span>
+      <span id="user-email" class="tb-meta"></span>
+      <button type="button" class="tb-signout" onclick="doLogout()" title="Sign out">Sign out</button>
       <div class="tb-acts" id="tb-acts"></div>
     </div>
   </div>
@@ -120,13 +123,13 @@
 
 <!-- App code. Order matters: each file may use what the files before it define.
      Change ?v= on every update so browsers fetch the new files instead of old cached ones. -->
-<script src="js/core.js?v=20261026c"></script>
-<script src="js/lists.js?v=20261026c"></script>
-<script src="js/documents.js?v=20261026c"></script>
-<script src="js/services.js?v=20261026c"></script>
-<script src="js/settings.js?v=20261026c"></script>
-<script src="js/reports.js?v=20261026c"></script>
-<script src="js/main.js?v=20261026c"></script>
+<script src="js/core.js?v=20261027a"></script>
+<script src="js/lists.js?v=20261027a"></script>
+<script src="js/documents.js?v=20261027a"></script>
+<script src="js/services.js?v=20261027a"></script>
+<script src="js/settings.js?v=20261027a"></script>
+<script src="js/reports.js?v=20261027a"></script>
+<script src="js/main.js?v=20261027a"></script>
 
 </body>
 </html>

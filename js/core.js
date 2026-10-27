@@ -34,7 +34,7 @@ function setSyncStatus(s){
   const el=document.getElementById('sync-status'); if(!el) return;
   const map={syncing:'🔄 Syncing…',ok:'☁️ Synced',offline:'💾 Local only',error:'⚠️ Sync error'};
   el.textContent=map[s]||s;
-  el.style.color=s==='ok'?'var(--success-tx)':s==='error'?'var(--danger)':'var(--muted)';
+  el.dataset.state=s;   // colour comes from app.css
 }
 
 /* ═══════════════════════════════════════════════
